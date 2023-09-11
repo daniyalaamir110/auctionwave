@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -26,7 +25,7 @@ class CategoryListApiView(APIView):
 
 class ProductListApiView(APIView):
 
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes=[permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request, *args, **kwargs):
         """
@@ -50,16 +49,19 @@ class ProductListApiView(APIView):
         title = request.data.get("title")
         description = request.data.get("description")
         base_price = request.data.get("base_price")
-        validity_period = request.data.get("validity_period")
-        valid_till = datetime.now() + timedelta(seconds=validity_period)
-        created_by = request.user
+        category_id = request.data.get("category_id")
+        validity_period = int(request.data.get("validity_period"))
 
+        category = Category.objects.get(pk=category_id)
+        valid_till = datetime.now() + timedelta(seconds=validity_period)
+        creator = request.user.pk
         data = {
             "title": title,
             "description": description,
             "base_price": base_price,
             "valid_till": valid_till,
-            "created_by": created_by
+            "category": category,
+            "creator": creator
         }
 
         serializer = ProductSerializer(data=data)
