@@ -1,11 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+
 class Category(models.Model):
     """
-        The category represents the type of product.
-        Each product must have a single category.
-        For example: Car, Mobile
+    The category represents the type of product.
+    Each product must have a single category.
+    For example: Car, Mobile
     """
 
     title = models.TextField(null=False)
@@ -18,8 +19,8 @@ class Category(models.Model):
 
 class Product(models.Model):
     """
-        Product is an item whose ad is created by the user.
-        A user can create multiple products.
+    Product is an item whose ad is created by the user.
+    A user can create multiple products.
     """
 
     title = models.TextField(null=False)
@@ -29,15 +30,15 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     valid_till = models.DateTimeField(null=False)
     creator = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
-    
+
     def __str__(self):
         return self.title
-    
+
 
 class Bid(models.Model):
     """
-        A bid is a record representing the a user's claim of interest
-        or offer for a product. A user can make only one bid for a product
+    A bid is a record representing the a user's claim of interest
+    or offer for a product. A user can make only one bid for a product
     """
 
     class Meta:
@@ -51,4 +52,3 @@ class Bid(models.Model):
 
     def __str__(self):
         return self.bid_amount
-    
