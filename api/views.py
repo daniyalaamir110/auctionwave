@@ -7,11 +7,13 @@ from datetime import datetime, timedelta
 from django.contrib.auth import login, logout
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from django.shortcuts import get_object_or_404
 
 
-# Create your views here.
 class CategoryListApiView(APIView):
-    def get(self, request, *args, **kwargs):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get(self, request):
         """
         List all categories
         """
@@ -24,11 +26,96 @@ class CategoryListApiView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "title": openapi.Schema(type=openapi.TYPE_STRING, default="Test")
+            },
+            required=["title"],
+        )
+    )
+    def post(self, request):
+        """
+        Create a new category
+        """
+        title = request.data.get("title")
+
+        data = {"title": title}
+
+        serializer = CategorySerializer(data=data)
+
+        serializer.is_valid(raise_exception=True)
+
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class CategoryDetailApiView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_object(self, category_id):
+        """
+        Get a category by id
+        """
+        category = get_object_or_404(Category, pk=category_id)
+
+        return category
+
+    def get(self, request, category_id):
+        """
+        Get a category by id
+        """
+        category = self.get_object(category_id=category_id)
+
+        serializer = CategorySerializer(data=category)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "title": openapi.Schema(type=openapi.TYPE_STRING, default="Test")
+            },
+        )
+    )
+    def patch(self, request, category_id):
+        """
+        Update an existing category by id
+        """
+
+        category = self.get_object(category_id=category_id)
+
+        title = request.data.get("title")
+
+        category.title = title
+
+        serializer = CategorySerializer(data=category.__dict__)
+
+        serializer.is_valid(raise_exception=True)
+
+        serializer.update()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, category_id):
+        """
+        Delete an existing category by id
+        """
+
+        category = self.get_object(category_id=category_id)
+
+        category.delete()
+
+        return Response(None, status=status.HTTP_200_OK)
+
 
 class ProductListApiView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         """
         Get all products
         """
@@ -67,7 +154,7 @@ class ProductListApiView(APIView):
         ),
         responses=[],
     )
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         """
         Create a single new product to advertise for bid
         """
@@ -77,7 +164,7 @@ class ProductListApiView(APIView):
         category_id = request.data.get("category_id")
         validity_period = int(request.data.get("validity_period"))
 
-        category = Category.objects.get(pk=category_id)
+        category = get_object_or_404(Category, pk=category_id)
         valid_till = datetime.now() + timedelta(seconds=validity_period)
         creator = request.user.pk
         data = {
@@ -91,13 +178,13 @@ class ProductListApiView(APIView):
 
         serializer = ProductSerializer(data=data)
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+##################### AUTH (TBD)
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 

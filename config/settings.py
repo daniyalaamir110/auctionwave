@@ -45,7 +45,7 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLAUSES": [
-        "rest_framework.authentication.SessionAuthentication"
+        "rest_framework.authentication.TokenAuthentication"
     ],
 }
 

@@ -9,7 +9,8 @@ class Category(models.Model):
     For example: Car, Mobile
     """
 
-    title = models.TextField(null=False)
+    # Columns
+    title = models.TextField(null=False, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -23,12 +24,14 @@ class Product(models.Model):
     A user can create multiple products.
     """
 
+    # Columns
     title = models.TextField(null=False)
     description = models.TextField(null=False)
     base_price = models.IntegerField(null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     valid_till = models.DateTimeField(null=False)
+    category = models.ForeignKey(Category, null=False, on_delete=models.CASCADE)
     creator = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -44,6 +47,7 @@ class Bid(models.Model):
     class Meta:
         unique_together = (("bidder", "product"),)
 
+    # Columns
     bidder = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, null=False, on_delete=models.CASCADE)
     bid_amount = models.IntegerField(null=False)
