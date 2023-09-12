@@ -31,7 +31,7 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     valid_till = models.DateTimeField(null=False)
-    category = models.ForeignKey(Category, null=False, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, null=True, on_delete=models.CASCADE)
     creator = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
 
     def __str__(self):

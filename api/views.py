@@ -69,7 +69,7 @@ class CategoryDetailApiView(APIView):
         """
         category = self.get_object(category_id=category_id)
 
-        serializer = CategorySerializer(data=category)
+        serializer = CategorySerializer(category)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -79,6 +79,7 @@ class CategoryDetailApiView(APIView):
             properties={
                 "title": openapi.Schema(type=openapi.TYPE_STRING, default="Test")
             },
+            required=[],
         )
     )
     def patch(self, request, category_id):
@@ -90,13 +91,13 @@ class CategoryDetailApiView(APIView):
 
         title = request.data.get("title")
 
-        category.title = title
+        data = {"title": title}
 
-        serializer = CategorySerializer(data=category.__dict__)
+        serializer = CategorySerializer(data=data)
 
         serializer.is_valid(raise_exception=True)
 
-        serializer.update()
+        serializer.update(instance=category, validated_data=data)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
