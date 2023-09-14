@@ -5,9 +5,9 @@ from .views import RegisterView, UserViewSet
 app_name = "user"
 
 user_router = routers.DefaultRouter()
-user_router.register(r"", UserViewSet)
+user_router.register("", UserViewSet)
 
 urlpatterns = [
+    path("register/", RegisterView.as_view(), name="register"),
     path("", include(user_router.urls)),
-    path("", RegisterView.as_view(), name="register"),
 ]
