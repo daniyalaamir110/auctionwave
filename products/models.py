@@ -3,8 +3,13 @@ from common.models import TimestampedModel
 from categories.models import Category
 from django.contrib.auth.models import User
 from datetime import datetime, timedelta, timezone
-from django.db.models import F, ExpressionWrapper, fields
-from django.db.models import CheckConstraint, Q
+from django.core.exceptions import ValidationError
+
+
+def no_past(value):
+    now = datetime.now(tz=timezone.utc)
+    if value < now:
+        raise ValidationError("Purchase_Date cannot be in the future.")
 
 
 class Product(TimestampedModel):
@@ -17,26 +22,13 @@ class Product(TimestampedModel):
     title = models.CharField(max_length=100)
     description = models.CharField(max_length=500)
     base_price = models.PositiveIntegerField()
-    valid_till = models.DateTimeField()
+    valid_till = models.DateTimeField(validators=[no_past])
 
     # Foreign keys
     category = models.ForeignKey(
         Category, on_delete=models.CASCADE, related_name="products"
     )
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="products")
-
-    class Meta:
-        constraints = [
-            # Check that valid_till is not less than the current datetime
-            CheckConstraint(
-                check=Q(
-                    valid_till__gte=ExpressionWrapper(
-                        F("valid_till"), output_field=fields.DateTimeField()
-                    )
-                ),
-                name="valid_till_not_less_than_current_datetime",
-            ),
-        ]
 
     def __str__(self):
         return f"{self.title} ({self.base_price})"

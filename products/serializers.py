@@ -34,3 +34,5 @@ class ProductWriteSerializer(serializers.ModelSerializer):
 
         if attrs["base_price"] <= 0:
             raise ValidationError({"base_price": "Must be a positive integer"})
+
+        return attrs
