@@ -9,5 +9,5 @@ user_router.register(r"", UserViewSet)
 
 urlpatterns = [
     path("", include(user_router.urls)),
-    path("register/", RegisterView.as_view(), name="register"),
+    path("", RegisterView.as_view(), name="register"),
 ]

@@ -13,15 +13,15 @@ app_name = "api"
 # Routers
 # 1. Category
 category_router = routers.DefaultRouter()
-category_router.register(r"category", CategoryViewSet)
+category_router.register(r"categories", CategoryViewSet)
 
 # 2. Product
 product_router = routers.DefaultRouter()
-product_router.register(r"product", ProductViewSet)
+product_router.register(r"products", ProductViewSet)
 
 # 3. Bid
 bid_router = routers.DefaultRouter()
-bid_router.register(r"bid", BidViewSet)
+bid_router.register(r"bids", BidViewSet)
 
 # Urls
 urlpatterns = [

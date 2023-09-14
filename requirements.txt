@@ -1,0 +1,4 @@
+django==4.2.5
+djangorestframework
+djangorestframework-simplejwt
+drf-yasg
