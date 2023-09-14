@@ -1,6 +1,12 @@
-from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 from rest_framework import serializers
 from .models import Category, Product, Bid
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username", "first_name", "last_name", "email"]
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -9,41 +15,35 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class ProductSerializer(serializers.ModelSerializer):
+class ProductReadSerializer(serializers.ModelSerializer):
+    category = CategorySerializer(read_only=True)
+    creator = UserSerializer(read_only=True)
+
     class Meta:
         model = Product
         fields = "__all__"
 
 
-class Bid(serializers.ModelSerializer):
+class ProductWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = "__all__"
+
+
+class BidReadSerializer(serializers.ModelSerializer):
+    product = ProductReadSerializer(read_only=True)
+    bidder = UserSerializer(read_only=True)
+
     class Meta:
         model = Bid
         fields = "__all__"
 
 
-class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField(label="Username", write_only=True)
+class BidWriteSerializer(serializers.ModelSerializer):
+    product = ProductReadSerializer(read_only=True)
+    bidder = UserSerializer(read_only=True)
 
-    password = serializers.CharField(label="password", write_only=True)
-
-    def validate(self, attrs):
-        username = attrs.get("username")
-        password = attrs.get("password")
-
-        if username and password:
-            user = authenticate(
-                request=self.context.get("request"),
-                username=username,
-                password=password,
-            )
-
-            if not user:
-                message = "Access denied: wrong username and password"
-                raise serializers.ValidationError(message, code="authorization")
-
-        else:
-            message = "Both username and password are required"
-            raise serializers.ValidationError(message, code="authorization")
-
-        attrs["user"] = user
-        return attrs
+    class Meta:
+        model = Bid
+        fields = "__all__"
+        read_only_fields = ["bidder"]

@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-104!vadi1*rl*!swb0t64-vn$9ac2rf2yxt(fp)2e78xj3o&!_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1", "testserver"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "testserver"]
 
 # Application definition
 INSTALLED_APPS = [
@@ -38,8 +38,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework.authtoken",
-    "api",
     "drf_yasg",
+    "api",
+    "user",
+    "authentication",
 ]
 
 REST_FRAMEWORK = {

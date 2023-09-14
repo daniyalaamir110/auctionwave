@@ -2,57 +2,74 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
-class Category(models.Model):
+class TimestampedModel(models.Model):
     """
-    The category represents the type of product.
-    Each product must have a single category.
+    This is an abstract model containing `created_at`
+    and `updated_at` attributes. This can be extended
+    into concrete models so that we don't need to redefine
+    these attributes
+    """
+
+    class Meta:
+        # Declare this as an abstract class
+        abstract = True
+
+    # Columns
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class Category(TimestampedModel):
+    """
+    The `Category` represents the type of `Product`.
+    Each `Product` must have a single `Category`.
     For example: Car, Mobile
     """
 
     # Columns
-    title = models.TextField(null=False, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    title = models.TextField(unique=True)
 
     def __str__(self):
         return self.title
 
 
-class Product(models.Model):
+class Product(TimestampedModel):
     """
-    Product is an item whose ad is created by the user.
-    A user can create multiple products.
+    `Product` is an item whose ad is created by the `User`.
+    A `User` can create multiple `Product`s.
     """
 
     # Columns
-    title = models.TextField(null=False)
-    description = models.TextField(null=False)
-    base_price = models.IntegerField(null=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    valid_till = models.DateTimeField(null=False)
-    category = models.ForeignKey(Category, null=True, on_delete=models.CASCADE)
-    creator = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
+    title = models.CharField(max_length=100)
+    description = models.CharField(max_length=500)
+    base_price = models.PositiveIntegerField()
+    valid_till = models.DateTimeField()
+
+    # Foreign keys
+    category = models.ForeignKey(
+        Category, on_delete=models.CASCADE, related_name="products"
+    )
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="products")
 
     def __str__(self):
-        return self.title
+        return f"{self.title} ({self.base_price})"
 
 
-class Bid(models.Model):
+class Bid(TimestampedModel):
     """
-    A bid is a record representing the a user's claim of interest
-    or offer for a product. A user can make only one bid for a product
+    A `Bid` is a record representing the a `User`'s claim of interest
+    or offer for a `Product`. A `User` can make only one `Bid` for a `Product`
     """
 
     class Meta:
         unique_together = (("bidder", "product"),)
 
     # Columns
-    bidder = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, null=False, on_delete=models.CASCADE)
-    bid_amount = models.IntegerField(null=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    bid_amount = models.PositiveIntegerField()
+
+    # Foreign keys
+    bidder = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bids")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="bids")
 
     def __str__(self):
-        return self.bid_amount
+        return f"Bid of {self.bid_amount} on {self.product} by {self.bidder}"
