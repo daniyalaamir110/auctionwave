@@ -7,6 +7,7 @@ from .views import (
     ProductDeleteView,
     CurrentUserProductListView,
     CurrentUserProductRetrieveView,
+    ProductBidCreateView,
 )
 
 app_name = "products"
@@ -18,4 +19,9 @@ urlpatterns = [
     path("delete/<int:pk>/", ProductDeleteView.as_view(), name="delete_product"),
     path("owned/", CurrentUserProductListView.as_view(), name="my_products"),
     path("owned/<int:pk>", CurrentUserProductRetrieveView.as_view(), name="my_product"),
+    path(
+        "<int:product_id>/bid",
+        ProductBidCreateView.as_view(),
+        name="product_bid_create",
+    ),
 ]

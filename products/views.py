@@ -4,6 +4,8 @@ from .serializers import ProductReadSerializer, ProductWriteSerializer
 from datetime import datetime, timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from bids.models import Bid
+from bids.serializers import BidWriteSerializer
 
 
 class ProductRetrieveView(generics.RetrieveAPIView):
@@ -141,7 +143,11 @@ class ProductCreateView(generics.CreateAPIView):
     serializer_class = ProductWriteSerializer
 
     def get_queryset(self):
-        return super().get_queryset()
+        queryset = Product.objects.filter(creator_id=self.request.user.pk).order_by(
+            "-created_at"
+        )
+
+        return queryset
 
 
 class ProductDeleteView(generics.DestroyAPIView):
@@ -149,20 +155,76 @@ class ProductDeleteView(generics.DestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProductWriteSerializer
 
+    def get_queryset(self):
+        queryset = Product.objects.filter(creator_id=self.request.user.pk).order_by(
+            "-created_at"
+        )
+
+        return queryset
+
     def delete(self, request, *args, **kwargs):
         # Get the product by its ID
         product = self.get_object()
 
         if not product:
-            raise exceptions.NotFound("Product doesn't exist")
-
-        # Check if the user is the creator of the product
-        if request.user != product.creator:
-            raise exceptions.PermissionDenied(
-                "You do not have permission to delete this product."
-            )
+            raise exceptions.NotFound("Product not found")
 
         # Delete the product
         product.delete()
 
         return response.Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProductBidCreateView(generics.CreateAPIView):
+    serializer_class = BidWriteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, product_id, *args, **kwargs):
+        try:
+            product = Product.objects.get(pk=product_id)
+        except Product.DoesNotExist:
+            return response.Response(
+                {"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if product.creator.pk == self.request.user.pk:
+            return response.Response(
+                {"error": "You cannot bid on your own product"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        bid_amount = request.data.get("bid_amount")
+
+        if not bid_amount:
+            return response.Response(
+                {"error": "bid_amount is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            bid_amount = int(bid_amount)
+        except ValueError:
+            return response.Response(
+                {"error": "bid_amount must be a positive integer"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if bid_amount <= product.base_price:
+            return response.Response(
+                {"error": "Bid amount must be higher than the base price"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if Bid.objects.filter(product=product, bidder=request.user).count():
+            return response.Response(
+                {"error": "This user has already bid for this product"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Create the Bid object
+        bid = Bid.objects.create(
+            product=product, bidder=request.user, bid_amount=bid_amount
+        )
+
+        serializer = BidWriteSerializer(bid)
+
+        return response.Response(serializer.data, status=status.HTTP_201_CREATED)

@@ -13,11 +13,24 @@ class BidReadSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class BidWriteSerializer(serializers.ModelSerializer):
+class UserBidReadSerializer(serializers.ModelSerializer):
     product = ProductReadSerializer(read_only=True)
+
+    class Meta:
+        model = Bid
+        exclude = ["bidder"]
+
+
+class ProductBidReadSerializer(serializers.ModelSerializer):
     bidder = UserReadSerializer(read_only=True)
 
     class Meta:
         model = Bid
         fields = "__all__"
-        read_only_fields = ["bidder"]
+
+
+class BidWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bid
+        fields = "__all__"
+        read_only_fields = ["bidder", "product"]

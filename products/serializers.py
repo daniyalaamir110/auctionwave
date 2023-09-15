@@ -3,16 +3,27 @@ from categories.serializers import CategorySerializer
 from user.serializers import UserReadSerializer
 from .models import Product
 from django.core.exceptions import ValidationError
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 
 class ProductReadSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     creator = UserReadSerializer(read_only=True)
+    is_available = serializers.BooleanField()
+    time_left = serializers.CharField()
 
     class Meta:
         model = Product
-        fields = "__all__"
+        fields = [
+            "title",
+            "description",
+            "base_price",
+            "valid_till",
+            "category",
+            "creator",
+            "is_available",
+            "time_left",
+        ]
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):
