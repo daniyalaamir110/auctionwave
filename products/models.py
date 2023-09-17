@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 def no_past(value):
     now = datetime.now(tz=timezone.utc)
     if value < now:
-        raise ValidationError("Purchase_Date cannot be in the future.")
+        raise ValidationError("valid_till cannot be in the past.")
 
 
 class Product(TimestampedModel):
@@ -46,11 +46,17 @@ class Product(TimestampedModel):
         return str(time_left)
 
     @property
-    def highest_bid(self) -> User | None:
-        if self.is_available:
-            return None
-
-        if self.bids.count == 0:
+    def highest_bid(self):
+        if self.bids.count() == 0:
             return None
 
         return self.bids.order_by("-bid_amount")[0]
+
+    def clean(self):
+        now = datetime.now(tz=timezone.utc)
+        if self.valid_till < now:
+            raise ValidationError("valid_till cannot be in the past.")
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)

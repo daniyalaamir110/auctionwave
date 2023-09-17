@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from common.models import TimestampedModel
-from products.models import Product
 
 
 class Bid(TimestampedModel):
@@ -19,7 +18,9 @@ class Bid(TimestampedModel):
 
     # Foreign keys
     bidder = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bids")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="bids")
+    product = models.ForeignKey(
+        "products.Product", on_delete=models.CASCADE, related_name="bids"
+    )
 
     def __str__(self):
         return f"Bid of {self.bid_amount} on {self.product} by {self.bidder}"

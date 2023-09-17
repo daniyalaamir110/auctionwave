@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from bids.models import Bid
-from bids.serializers import BidWriteSerializer
 from common.paginations import StandardResultsSetPagination
 
 
@@ -131,11 +130,12 @@ class ProductCreateView(generics.CreateAPIView):
     serializer_class = ProductWriteSerializer
 
     def get_queryset(self):
-        queryset = Product.objects.filter(creator_id=self.request.user.pk).order_by(
-            "-created_at"
-        )
+        queryset = Product.objects.all()
 
         return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(creator=self.request.user)
 
 
 class ProductDeleteView(generics.DestroyAPIView):
@@ -161,19 +161,3 @@ class ProductDeleteView(generics.DestroyAPIView):
         product.delete()
 
         return response.Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class ProductBidCreateView(generics.CreateAPIView):
-    serializer_class = BidWriteSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def create(self, request, id):
-        serializer = self.get_serializer(
-            data=request.data, context={"product_id": id, "request": request}
-        )
-
-        serializer.is_valid(raise_exception=True)
-
-        serializer.save()
-
-        return response.Response(serializer.data, status=status.HTTP_201_CREATED)

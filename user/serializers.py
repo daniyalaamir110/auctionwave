@@ -1,4 +1,4 @@
-from rest_framework import serializers, validators
+from rest_framework import serializers, validators, fields
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 
@@ -13,6 +13,60 @@ class UserReadSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
         ]
+
+
+class UserEditSerailizer(serializers.ModelSerializer):
+    current_password = serializers.CharField(
+        write_only=True, required=True, max_length=128
+    )
+    new_password = serializers.CharField(
+        write_only=True, required=False, max_length=128, allow_blank=True
+    )
+    confirm_password = serializers.CharField(
+        write_only=True, required=False, max_length=128, allow_blank=True
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            "email",
+            "first_name",
+            "last_name",
+            "current_password",
+            "new_password",
+            "confirm_password",
+        ]
+
+    def validate(self, attrs):
+        if attrs["password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError(
+                {"password": "Password fields didn't match."}
+            )
+
+        return attrs
+
+    def update(self, instance, validated_data):
+        current_password = validated_data.get("current_password", None)
+        new_password = validated_data.get("new_password", None)
+
+        if current_password and not self.request.user.check_password(current_password):
+            raise serializers.ValidationError(
+                {"current_password": "Incorrect password."}
+            )
+
+        if new_password:
+            self.request.user.set_password(new_password)
+
+        self.request.user.first_name = validated_data.get(
+            "first_name", self.request.user.first_name
+        )
+        self.request.user.last_name = validated_data.get(
+            "last_name", self.request.user.last_name
+        )
+        self.request.user.email = validated_data.get("email", self.request.user.email)
+        self.request.user.save()
+
+        return self.request.user
 
 
 class RegisterSerializer(serializers.ModelSerializer):
