@@ -20,7 +20,7 @@ urlpatterns = [
     path("owned/", CurrentUserProductListView.as_view(), name="my_products"),
     path("owned/<int:pk>", CurrentUserProductRetrieveView.as_view(), name="my_product"),
     path(
-        "<int:product_id>/bid",
+        "<int:id>/bid",
         ProductBidCreateView.as_view(),
         name="product_bid_create",
     ),
