@@ -167,52 +167,13 @@ class ProductBidCreateView(generics.CreateAPIView):
     serializer_class = BidWriteSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def create(self, request, id, *args, **kwargs):
-        try:
-            product = Product.objects.get(pk=id)
-        except Product.DoesNotExist:
-            return response.Response(
-                {"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND
-            )
-
-        if product.creator.pk == self.request.user.pk:
-            return response.Response(
-                {"error": "You cannot bid on your own product"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        bid_amount = request.data.get("bid_amount")
-
-        if not bid_amount:
-            return response.Response(
-                {"error": "bid_amount is required"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            bid_amount = int(bid_amount)
-        except ValueError:
-            return response.Response(
-                {"error": "bid_amount must be a positive integer"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if bid_amount <= product.base_price:
-            return response.Response(
-                {"error": "Bid amount must be higher than the base price"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if Bid.objects.filter(product=product, bidder=request.user).count():
-            return response.Response(
-                {"error": "This user has already bid for this product"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Create the Bid object
-        bid = Bid.objects.create(
-            product=product, bidder=request.user, bid_amount=bid_amount
+    def create(self, request, id):
+        serializer = self.get_serializer(
+            data=request.data, context={"product_id": id, "request": request}
         )
 
-        serializer = BidWriteSerializer(bid)
+        serializer.is_valid(raise_exception=True)
+
+        serializer.save()
 
         return response.Response(serializer.data, status=status.HTTP_201_CREATED)
