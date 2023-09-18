@@ -21,7 +21,7 @@ class UserReadSerializer(serializers.ModelSerializer):
 
 class UserEditSerailizer(serializers.ModelSerializer):
     """
-    This serializer allows editing a user
+    This serializer allows editing a user.
     """
 
     current_password = serializers.CharField(
@@ -37,6 +37,7 @@ class UserEditSerailizer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
+            "id",
             "email",
             "first_name",
             "last_name",
@@ -44,37 +45,40 @@ class UserEditSerailizer(serializers.ModelSerializer):
             "new_password",
             "confirm_password",
         ]
+        extra_kwargs = {
+            "email": {"required": False},
+            "first_name": {"required": False},
+            "last_name": {"required": False},
+            "current_password": {"required": True},
+            "new_password": {"required": False},
+            "confirm_password": {"required": False},
+        }
 
-    def validate(self, attrs):
-        if attrs["password"] != attrs["confirm_password"]:
-            raise serializers.ValidationError(
-                {"password": "Password fields didn't match."}
-            )
-
-        return attrs
-
-    def update(self, instance, validated_data):
+    def create(self, validated_data):
         current_password = validated_data.get("current_password", None)
         new_password = validated_data.get("new_password", None)
+        confirm_password = validated_data.get("confirm_password", None)
+        user = validated_data.get("user", None)
 
-        if current_password and not self.request.user.check_password(current_password):
+        if current_password and not user.check_password(current_password):
             raise serializers.ValidationError(
                 {"current_password": "Incorrect password."}
             )
 
         if new_password:
-            self.request.user.set_password(new_password)
+            if new_password == confirm_password:
+                user.set_password(new_password)
+            else:
+                raise serializers.ValidationError(
+                    {"confirm_password": "Password fields don't match."}
+                )
 
-        self.request.user.first_name = validated_data.get(
-            "first_name", self.request.user.first_name
-        )
-        self.request.user.last_name = validated_data.get(
-            "last_name", self.request.user.last_name
-        )
-        self.request.user.email = validated_data.get("email", self.request.user.email)
-        self.request.user.save()
+        user.first_name = validated_data.get("first_name", user.first_name)
+        user.last_name = validated_data.get("last_name", user.last_name)
+        user.email = validated_data.get("email", user.email)
+        user.save()
 
-        return self.request.user
+        return user
 
 
 class RegisterSerializer(serializers.ModelSerializer):

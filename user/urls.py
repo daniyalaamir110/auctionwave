@@ -9,6 +9,6 @@ user_router.register("", UserViewSet)
 
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
+    path("edit/", EditUserView.as_view(), name="user_edit"),
     path("", include(user_router.urls)),
-    # path("edit/", EditUserView.as_view(), name="user_edit"),
 ]
