@@ -1,14 +1,21 @@
 from rest_framework import permissions, generics, exceptions, response, status, filters
 from .models import Product
-from .serializers import ProductReadSerializer, ProductWriteSerializer
+from .serializers import (
+    ProductReadSerializer,
+    ProductWriteSerializer,
+    ProductBidsReadSerializer,
+)
 from datetime import datetime, timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from bids.models import Bid
 from common.paginations import StandardResultsSetPagination
 
 
 class ProductRetrieveView(generics.RetrieveAPIView):
+    """
+    This resource returns the details of a valid product
+    """
+
     serializer_class = ProductReadSerializer
 
     # Only includes the available products
@@ -16,9 +23,14 @@ class ProductRetrieveView(generics.RetrieveAPIView):
 
 
 class ProductListView(generics.ListAPIView):
+    """
+    This resource returns paginated, filtered, and ordered
+    list of products as needed which are valid.
+    """
+
     serializer_class = ProductReadSerializer
     pagination_class = StandardResultsSetPagination
-    filter_backends = [filters.OrderingFilter]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
 
     def get_queryset(self):
         # Filter the products which are available
@@ -27,7 +39,6 @@ class ProductListView(generics.ListAPIView):
         ).order_by("-created_at")
 
         # Get the ?query=& params from request
-        search = self.request.query_params.get("search", None)
         category_id = self.request.query_params.get("category", None)
         min_price = self.request.query_params.get("min_price", None)
         max_price = self.request.query_params.get("max_price", None)
@@ -36,9 +47,6 @@ class ProductListView(generics.ListAPIView):
         # Apply filters
         if creator_id:
             queryset = queryset.filter(creator_id=creator_id)
-
-        if search:
-            queryset = queryset.filter(title__icontains=search)
 
         if category_id:
             queryset = queryset.filter(category_id=category_id)
@@ -55,7 +63,6 @@ class ProductListView(generics.ListAPIView):
         manual_parameters=[
             openapi.Parameter("category", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
             openapi.Parameter("creator", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
-            openapi.Parameter("search", openapi.IN_QUERY, type=openapi.TYPE_STRING),
             openapi.Parameter("min_price", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
             openapi.Parameter("max_price", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
         ],
@@ -66,6 +73,11 @@ class ProductListView(generics.ListAPIView):
 
 
 class CurrentUserProductListView(generics.ListAPIView):
+    """
+    This resource returns the products created by the current user.
+    Must be logged in to access.
+    """
+
     serializer_class = ProductReadSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardResultsSetPagination
@@ -100,7 +112,6 @@ class CurrentUserProductListView(generics.ListAPIView):
     @swagger_auto_schema(
         manual_parameters=[
             openapi.Parameter("category", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
-            # openapi.Parameter("search", openapi.IN_QUERY, type=openapi.TYPE_STRING),
             openapi.Parameter("min_price", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
             openapi.Parameter("max_price", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
         ],
@@ -111,6 +122,11 @@ class CurrentUserProductListView(generics.ListAPIView):
 
 
 class CurrentUserProductRetrieveView(generics.RetrieveAPIView):
+    """
+    This resource returns a single product created by the current user.
+    Must be logged in to access.
+    """
+
     serializer_class = ProductReadSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -121,25 +137,25 @@ class CurrentUserProductRetrieveView(generics.RetrieveAPIView):
 
         return queryset
 
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
-
 
 class ProductCreateView(generics.CreateAPIView):
+    """
+    This resource lets create a product with a base amount and max validity time
+    """
+
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProductWriteSerializer
-
-    def get_queryset(self):
-        queryset = Product.objects.all()
-
-        return queryset
+    queryset = Product.objects.all()
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
 
 
 class ProductDeleteView(generics.DestroyAPIView):
-    queryset = Product.objects.all()
+    """
+    This resource lets delete a product out of the owned products.
+    """
+
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProductWriteSerializer
 
@@ -150,14 +166,40 @@ class ProductDeleteView(generics.DestroyAPIView):
 
         return queryset
 
-    def delete(self, request, *args, **kwargs):
-        # Get the product by its ID
+    def delete(self):
         product = self.get_object()
 
         if not product:
             raise exceptions.NotFound("Product not found")
 
-        # Delete the product
         product.delete()
 
         return response.Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProductBidsListView(generics.RetrieveAPIView):
+    """
+    This resource returns the list of bids for a specific product
+    which is valid
+    """
+
+    serializer_class = ProductBidsReadSerializer
+
+    queryset = Product.objects.filter(valid_till__gte=datetime.now(tz=timezone.utc))
+
+
+class UserProductBidsListView(generics.RetrieveAPIView):
+    """
+    This resource returns the list of bids for a specific product
+    created by the current user
+    """
+
+    serializer_class = ProductBidsReadSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Product.objects.filter(creator_id=self.request.user.pk).order_by(
+            "-created_at"
+        )
+
+        return queryset

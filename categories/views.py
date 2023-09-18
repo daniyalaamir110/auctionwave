@@ -7,6 +7,12 @@ from drf_yasg.utils import swagger_auto_schema
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
+    """
+    A set of views to provide CRUD operations on category.
+    All users can view categories, but only the super admin
+    can update the categories.
+    """
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     pagination_class = StandardResultsSetPagination

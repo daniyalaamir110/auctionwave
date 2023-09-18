@@ -52,6 +52,10 @@ class Product(TimestampedModel):
 
         return self.bids.order_by("-bid_amount")[0]
 
+    @property
+    def bid_count(self):
+        return self.bids.count()
+
     def clean(self):
         now = datetime.now(tz=timezone.utc)
         if self.valid_till < now:

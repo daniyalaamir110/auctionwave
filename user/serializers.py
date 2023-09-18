@@ -1,9 +1,13 @@
-from rest_framework import serializers, validators, fields
+from rest_framework import serializers, validators
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 
 
 class UserReadSerializer(serializers.ModelSerializer):
+    """
+    This serializer contains the user basic info only
+    """
+
     class Meta:
         model = User
         fields = [
@@ -16,6 +20,10 @@ class UserReadSerializer(serializers.ModelSerializer):
 
 
 class UserEditSerailizer(serializers.ModelSerializer):
+    """
+    This serializer allows editing a user
+    """
+
     current_password = serializers.CharField(
         write_only=True, required=True, max_length=128
     )
@@ -70,6 +78,10 @@ class UserEditSerailizer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    """
+    This serializer allows creation of new user
+    """
+
     email = serializers.EmailField(
         required=True,
         validators=[validators.UniqueValidator(queryset=User.objects.all())],

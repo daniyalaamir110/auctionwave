@@ -12,8 +12,15 @@ class ProductBidReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Bid
-        # fields = "__all__"
         exclude = ["product"]
+
+
+class ProductBidsReadSerializer(serializers.ModelSerializer):
+    bids = ProductBidReadSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = Product
+        fields = ["bids"]
 
 
 class ProductReadSerializer(serializers.ModelSerializer):
@@ -22,6 +29,7 @@ class ProductReadSerializer(serializers.ModelSerializer):
     is_available = serializers.BooleanField(read_only=True)
     time_left = serializers.CharField(read_only=True)
     highest_bid = ProductBidReadSerializer(read_only=True)
+    bid_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Product
@@ -36,10 +44,11 @@ class ProductReadSerializer(serializers.ModelSerializer):
             "is_available",
             "time_left",
             "highest_bid",
+            "bid_count",
         ]
         extra_kwargs = {
             "id": {"read_only": True},
-            "highest_bidder": {"read_only": True},
+            "highest_bid": {"read_only": True},
         }
 
 
