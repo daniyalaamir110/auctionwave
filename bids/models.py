@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from common.models import TimestampedModel
+from datetime import datetime, timezone
 
 
 class Bid(TimestampedModel):
@@ -33,6 +34,12 @@ class Bid(TimestampedModel):
 
         if self.bidder.pk == self.product.creator.pk:
             raise ValidationError("The product creators cannot bid on their products")
+
+        if datetime.now(tz=timezone.utc) > self.product.valid_till:
+            raise ValidationError("The product is not available now")
+
+        if self.product.bids.filter(bidder=self.bidder).count():
+            raise ValidationError("The user has already bid for this product")
 
     def save(self, *args, **kwargs):
         self.full_clean()
