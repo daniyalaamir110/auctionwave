@@ -6,7 +6,7 @@ from .serializers import (
     BidWriteSerializer,
 )
 from common.paginations import StandardResultsSetPagination
-from common.permissions import isBidder, isBidProductValid
+from common.permissions import IsBidder, IsBidProductValid
 
 
 class UserBidsListView(generics.ListAPIView):
@@ -33,7 +33,7 @@ class UserBidsRetrieveView(generics.RetrieveAPIView):
     """
 
     queryset = Bid.objects.all().order_by("-created_at")
-    permission_classes = [permissions.IsAuthenticated, isBidder]
+    permission_classes = [permissions.IsAuthenticated, IsBidder]
     serializer_class = UserBidReadSerializer
 
 
@@ -44,7 +44,7 @@ class UserBidsUpdateView(generics.UpdateAPIView):
     """
 
     queryset = Bid.objects.all().order_by("-created_at")
-    permission_classes = [permissions.IsAuthenticated, isBidder, isBidProductValid]
+    permission_classes = [permissions.IsAuthenticated, IsBidder, IsBidProductValid]
     serializer_class = UserBidUpdateDeleteSerializer
 
 
@@ -55,7 +55,7 @@ class UserBidsDeleteView(generics.DestroyAPIView):
     """
 
     queryset = Bid.objects.all().order_by("-created_at")
-    permission_classes = [permissions.IsAuthenticated, isBidder, isBidProductValid]
+    permission_classes = [permissions.IsAuthenticated, IsBidder, IsBidProductValid]
     serializer_class = UserBidUpdateDeleteSerializer
 
 

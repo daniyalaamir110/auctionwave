@@ -15,7 +15,7 @@ class IsAdminUserOrReadOnly(IsAdminUser):
         return super().has_permission(request=request, view=view)
 
 
-class isProductCreator(BasePermission):
+class IsProductCreator(BasePermission):
     def has_object_permission(self, request, view, obj):
         if obj.creator != request.user:
             raise exceptions.PermissionDenied("You are not the creator of this product")
@@ -23,7 +23,7 @@ class isProductCreator(BasePermission):
         return True
 
 
-class isBidder(BasePermission):
+class IsBidder(BasePermission):
     def has_object_permission(self, request, view, obj):
         if obj.bidder != request.user:
             raise exceptions.PermissionDenied("This bid is not made by you")
@@ -31,7 +31,7 @@ class isBidder(BasePermission):
         return True
 
 
-class isBidProductValid(BasePermission):
+class IsBidProductValid(BasePermission):
     def has_object_permission(self, request, view, obj):
         if obj.product.valid_till > datetime.now(tz=timezone.utc):
             raise exceptions.PermissionDenied(

@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from common.paginations import StandardResultsSetPagination
-from common.permissions import isProductCreator
+from common.permissions import IsProductCreator
 
 
 class ProductRetrieveView(generics.RetrieveAPIView):
@@ -130,7 +130,7 @@ class CurrentUserProductRetrieveView(generics.RetrieveAPIView):
 
     queryset = Product.objects.all().order_by("-created_at")
     serializer_class = ProductReadSerializer
-    permission_classes = [permissions.IsAuthenticated, isProductCreator]
+    permission_classes = [permissions.IsAuthenticated, IsProductCreator]
 
 
 class ProductCreateView(generics.CreateAPIView):
@@ -153,7 +153,7 @@ class ProductDeleteView(generics.DestroyAPIView):
 
     queryset = Product.objects.all().order_by("-created_at")
     serializer_class = ProductWriteSerializer
-    permission_classes = [permissions.IsAuthenticated, isProductCreator]
+    permission_classes = [permissions.IsAuthenticated, IsProductCreator]
 
 
 class ProductBidsListView(generics.RetrieveAPIView):
@@ -174,4 +174,4 @@ class UserProductBidsListView(generics.RetrieveAPIView):
 
     queryset = Product.objects.all().order_by("-created_at")
     serializer_class = ProductBidsReadSerializer
-    permission_classes = [permissions.IsAuthenticated, isProductCreator]
+    permission_classes = [permissions.IsAuthenticated, IsProductCreator]
