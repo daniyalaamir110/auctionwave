@@ -6,7 +6,7 @@ from .serializers import (
     BidWriteSerializer,
 )
 from common.paginations import StandardResultsSetPagination
-from datetime import datetime, timezone
+from common.permissions import isBidder, isBidProductValid
 
 
 class UserBidsListView(generics.ListAPIView):
@@ -32,15 +32,9 @@ class UserBidsRetrieveView(generics.RetrieveAPIView):
     on others' products.
     """
 
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Bid.objects.all().order_by("-created_at")
+    permission_classes = [permissions.IsAuthenticated, isBidder]
     serializer_class = UserBidReadSerializer
-
-    def get_queryset(self):
-        queryset = Bid.objects.filter(
-            bidder=self.request.user,
-        ).order_by("-created_at")
-
-        return queryset
 
 
 class UserBidsUpdateView(generics.UpdateAPIView):
@@ -49,16 +43,9 @@ class UserBidsUpdateView(generics.UpdateAPIView):
     if the product is valid.
     """
 
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Bid.objects.all().order_by("-created_at")
+    permission_classes = [permissions.IsAuthenticated, isBidder, isBidProductValid]
     serializer_class = UserBidUpdateDeleteSerializer
-
-    def get_queryset(self):
-        queryset = Bid.objects.filter(
-            bidder=self.request.user,
-            product__valid_till__gte=datetime.now(tz=timezone.utc),
-        ).order_by("-created_at")
-
-        return queryset
 
 
 class UserBidsDeleteView(generics.DestroyAPIView):
@@ -67,17 +54,9 @@ class UserBidsDeleteView(generics.DestroyAPIView):
     if the product is available.
     """
 
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Bid.objects.all().order_by("-created_at")
+    permission_classes = [permissions.IsAuthenticated, isBidder, isBidProductValid]
     serializer_class = UserBidUpdateDeleteSerializer
-
-    def get_queryset(self):
-        # Filter the bids which are available
-        queryset = Bid.objects.filter(
-            bidder=self.request.user,
-            product__valid_till__gte=datetime.now(tz=timezone.utc),
-        ).order_by("-created_at")
-
-        return queryset
 
 
 class BidCreateView(generics.CreateAPIView):

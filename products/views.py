@@ -1,4 +1,4 @@
-from rest_framework import permissions, generics, exceptions, response, status, filters
+from rest_framework import permissions, generics, filters
 from .models import Product
 from .serializers import (
     ProductReadSerializer,
@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from common.paginations import StandardResultsSetPagination
+from common.permissions import isProductCreator
 
 
 class ProductRetrieveView(generics.RetrieveAPIView):
@@ -127,15 +128,9 @@ class CurrentUserProductRetrieveView(generics.RetrieveAPIView):
     Must be logged in to access.
     """
 
+    queryset = Product.objects.all().order_by("-created_at")
     serializer_class = ProductReadSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        queryset = Product.objects.filter(creator_id=self.request.user.pk).order_by(
-            "-created_at"
-        )
-
-        return queryset
+    permission_classes = [permissions.IsAuthenticated, isProductCreator]
 
 
 class ProductCreateView(generics.CreateAPIView):
@@ -143,9 +138,9 @@ class ProductCreateView(generics.CreateAPIView):
     This resource lets create a product with a base amount and max validity time
     """
 
+    queryset = Product.objects.all()
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProductWriteSerializer
-    queryset = Product.objects.all()
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
@@ -156,25 +151,9 @@ class ProductDeleteView(generics.DestroyAPIView):
     This resource lets delete a product out of the owned products.
     """
 
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Product.objects.all().order_by("-created_at")
     serializer_class = ProductWriteSerializer
-
-    def get_queryset(self):
-        queryset = Product.objects.filter(creator_id=self.request.user.pk).order_by(
-            "-created_at"
-        )
-
-        return queryset
-
-    def delete(self):
-        product = self.get_object()
-
-        if not product:
-            raise exceptions.NotFound("Product not found")
-
-        product.delete()
-
-        return response.Response(status=status.HTTP_204_NO_CONTENT)
+    permission_classes = [permissions.IsAuthenticated, isProductCreator]
 
 
 class ProductBidsListView(generics.RetrieveAPIView):
@@ -184,7 +163,6 @@ class ProductBidsListView(generics.RetrieveAPIView):
     """
 
     serializer_class = ProductBidsReadSerializer
-
     queryset = Product.objects.filter(valid_till__gte=datetime.now(tz=timezone.utc))
 
 
@@ -194,12 +172,6 @@ class UserProductBidsListView(generics.RetrieveAPIView):
     created by the current user
     """
 
+    queryset = Product.objects.all().order_by("-created_at")
     serializer_class = ProductBidsReadSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        queryset = Product.objects.filter(creator_id=self.request.user.pk).order_by(
-            "-created_at"
-        )
-
-        return queryset
+    permission_classes = [permissions.IsAuthenticated, isProductCreator]
