@@ -11,7 +11,7 @@ class Category(TimestampedModel):
     """
 
     # Columns
-    title = models.TextField(unique=True)
+    title = models.TextField(unique=True, verbose_name="Category Title")
 
     def __str__(self):
         return self.title

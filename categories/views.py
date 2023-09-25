@@ -1,14 +1,20 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, filters
 from .models import Category
 from .serializers import CategorySerializer
+from common.paginations import StandardResultsSetPagination
+from common.permissions import IsAdminUserOrReadOnly
 
 
-# Create your views here.
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
+    """
+    A set of views to provide CRUD operations on category.
+    All users can view categories, but only the super admin
+    can update the categories.
+    """
 
-    def get_permissions(self):
-        if self.action in ("list", "retrieve"):
-            return [permissions.AllowAny()]
-        return [permissions.IsAdminUser()]
+    queryset = Category.objects.all().order_by("title")
+    serializer_class = CategorySerializer
+    pagination_class = StandardResultsSetPagination
+    permission_classes = [IsAdminUserOrReadOnly]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["title"]
