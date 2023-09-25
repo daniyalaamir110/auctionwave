@@ -32,6 +32,7 @@ class ProductListView(generics.ListAPIView):
     serializer_class = ProductReadSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["title"]
 
     def get_queryset(self):
         # Filter the products which are available
@@ -83,22 +84,19 @@ class CurrentUserProductListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["title"]
 
     def get_queryset(self):
-        queryset = Product.objects.filter(creator_id=self.request.user.pk).order_by(
-            "-created_at"
-        )
+        queryset = Product.objects.filter(
+            creator_id=self.request.user.pk,
+        ).order_by("-created_at")
 
         # Get the ?query=& params from request
-        search = self.request.query_params.get("search", None)
         category_id = self.request.query_params.get("category", None)
         min_price = self.request.query_params.get("min_price", None)
         max_price = self.request.query_params.get("max_price", None)
 
         # Apply filters
-        if search:
-            queryset = queryset.filter(title__icontains=search)
-
         if category_id:
             queryset = queryset.filter(category_id=category_id)
 
@@ -152,14 +150,13 @@ class ProductDeleteView(generics.DestroyAPIView):
     """
 
     queryset = Product.objects.all().order_by("-created_at")
-    serializer_class = ProductWriteSerializer
     permission_classes = [permissions.IsAuthenticated, IsProductCreator]
 
 
 class ProductBidsListView(generics.RetrieveAPIView):
     """
     This resource returns the list of bids for a specific product
-    which is valid
+    which is valid.
     """
 
     serializer_class = ProductBidsReadSerializer

@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions, viewsets
+from rest_framework import generics, permissions, viewsets, filters
 from .serializers import RegisterSerializer, UserReadSerializer, UserEditSerailizer
 from common.paginations import StandardResultsSetPagination
 from django.contrib.auth.models import User
@@ -14,6 +14,8 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserReadSerializer
     pagination_class = StandardResultsSetPagination
     permission_classes = [permissions.AllowAny]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["first_name", "last_name", "email", "username"]
 
 
 class RegisterView(generics.CreateAPIView):

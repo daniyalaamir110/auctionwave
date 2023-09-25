@@ -12,8 +12,9 @@ class CategoryViewSet(viewsets.ModelViewSet):
     can update the categories.
     """
 
-    queryset = Category.objects.all()
+    queryset = Category.objects.all().order_by("title")
     serializer_class = CategorySerializer
     pagination_class = StandardResultsSetPagination
     permission_classes = [IsAdminUserOrReadOnly]
     filter_backends = [filters.SearchFilter]
+    search_fields = ["title"]

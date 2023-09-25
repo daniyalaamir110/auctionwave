@@ -33,7 +33,7 @@ class IsBidder(BasePermission):
 
 class IsBidProductValid(BasePermission):
     def has_object_permission(self, request, view, obj):
-        if obj.product.valid_till > datetime.now(tz=timezone.utc):
+        if obj.product.valid_till < datetime.now(tz=timezone.utc):
             raise exceptions.PermissionDenied(
                 "The product for which this bid was made is not valid now"
             )

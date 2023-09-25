@@ -45,9 +45,6 @@ class Bid(TimestampedModel):
         if datetime.now(tz=timezone.utc) > self.product.valid_till:
             raise ValidationError("The product is not available now")
 
-        if self.product.bids.filter(bidder=self.bidder).count():
-            raise ValidationError("The user has already bid for this product")
-
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)

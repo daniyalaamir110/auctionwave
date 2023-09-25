@@ -56,7 +56,6 @@ class UserBidsDeleteView(generics.DestroyAPIView):
 
     queryset = Bid.objects.all().order_by("-created_at")
     permission_classes = [permissions.IsAuthenticated, IsBidder, IsBidProductValid]
-    serializer_class = UserBidUpdateDeleteSerializer
 
 
 class BidCreateView(generics.CreateAPIView):
