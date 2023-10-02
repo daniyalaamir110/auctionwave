@@ -1,4 +1,3 @@
-from rest_framework import permissions, generics, filters
 from .models import Product
 from .serializers import (
     ProductReadSerializer,
@@ -11,60 +10,79 @@ from drf_yasg.utils import swagger_auto_schema
 from common.paginations import StandardResultsSetPagination
 from common.permissions import IsProductCreator
 from bids.models import Bid
+from rest_framework.generics import (
+    ListCreateAPIView,
+    RetrieveDestroyAPIView,
+    ListAPIView,
+    RetrieveAPIView,
+)
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.filters import SearchFilter, OrderingFilter
 
 
-class ProductRetrieveView(generics.RetrieveAPIView):
-    """
-    This resource returns the details of a valid product
-    """
-
+class ProductDetailView(RetrieveDestroyAPIView):
     serializer_class = ProductReadSerializer
 
-    # Only includes the available products
     queryset = Product.objects.filter(
         valid_till__gte=datetime.now(tz=timezone.utc)
     ).select_related("category", "creator")
 
+    def get_permissions(self):
+        if self.request.method == "DELETE":
+            return [IsAuthenticated, IsProductCreator]
+        return super().get_permissions()
 
-class ProductListView(generics.ListAPIView):
-    """
-    This resource returns paginated, filtered, and ordered
-    list of products as needed which are valid.
-    """
 
+class ProductListView(ListCreateAPIView):
     serializer_class = ProductReadSerializer
     pagination_class = StandardResultsSetPagination
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ["title"]
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ProductReadSerializer
+        elif self.request.method == "POST":
+            return ProductWriteSerializer
+
+        return super().get_serializer_class()
+
+    def perform_create(self, serializer):
+        serializer.save(creator=self.request.user)
 
     def get_queryset(self):
-        # Filter the products which are available
-        queryset = (
-            Product.objects.filter(valid_till__gte=datetime.now(tz=timezone.utc))
-            .order_by("-created_at")
-            .select_related("category", "creator")
-        )
+        if self.request.method == "GET":
+            # Filter the products which are available
+            queryset = (
+                Product.objects.filter(valid_till__gte=datetime.now(tz=timezone.utc))
+                .order_by("-created_at")
+                .select_related("category", "creator")
+            )
 
-        # Get the ?query=& params from request
-        category_id = self.request.query_params.get("category", None)
-        min_price = self.request.query_params.get("min_price", None)
-        max_price = self.request.query_params.get("max_price", None)
-        creator_id = self.request.query_params.get("creator", None)
+            # Get the ?query=& params from request
+            category_id = self.request.query_params.get("category", None)
+            min_price = self.request.query_params.get("min_price", None)
+            max_price = self.request.query_params.get("max_price", None)
+            creator_id = self.request.query_params.get("creator", None)
 
-        # Apply filters
-        if creator_id:
-            queryset = queryset.filter(creator_id=creator_id)
+            # Apply filters
+            if creator_id:
+                queryset = queryset.filter(creator_id=creator_id)
 
-        if category_id:
-            queryset = queryset.filter(category_id=category_id)
+            if category_id:
+                queryset = queryset.filter(category_id=category_id)
 
-        if min_price:
-            queryset = queryset.filter(base_price__gte=min_price)
+            if min_price:
+                queryset = queryset.filter(base_price__gte=min_price)
 
-        if max_price:
-            queryset = queryset.filter(base_price__lte=max_price)
+            if max_price:
+                queryset = queryset.filter(base_price__lte=max_price)
 
-        return queryset
+            return queryset
+
+        elif self.request.method == "POST":
+            return Product.objects.all()
 
     @swagger_auto_schema(
         manual_parameters=[
@@ -79,16 +97,16 @@ class ProductListView(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
 
-class CurrentUserProductListView(generics.ListAPIView):
+class CurrentUserProductListView(ListAPIView):
     """
     This resource returns the products created by the current user.
     Must be logged in to access.
     """
 
     serializer_class = ProductReadSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ["title"]
 
     def get_queryset(self):
@@ -129,7 +147,7 @@ class CurrentUserProductListView(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
 
-class CurrentUserProductRetrieveView(generics.RetrieveAPIView):
+class CurrentUserProductRetrieveView(RetrieveAPIView):
     """
     This resource returns a single product created by the current user.
     Must be logged in to access.
@@ -137,32 +155,10 @@ class CurrentUserProductRetrieveView(generics.RetrieveAPIView):
 
     queryset = Product.objects.all().order_by("-created_at").select_related("category")
     serializer_class = ProductReadSerializer
-    permission_classes = [permissions.IsAuthenticated, IsProductCreator]
+    permission_classes = [IsAuthenticated, IsProductCreator]
 
 
-class ProductCreateView(generics.CreateAPIView):
-    """
-    This resource lets create a product with a base amount and max validity time
-    """
-
-    queryset = Product.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = ProductWriteSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(creator=self.request.user)
-
-
-class ProductDeleteView(generics.DestroyAPIView):
-    """
-    This resource lets delete a product out of the owned products.
-    """
-
-    queryset = Product.objects.all().order_by("-created_at").select_related("creator")
-    permission_classes = [permissions.IsAuthenticated, IsProductCreator]
-
-
-class ProductBidsListView(generics.ListAPIView):
+class ProductBidsListView(ListAPIView):
     """
     This resource returns the list of bids for a specific product
     which is valid.
@@ -179,14 +175,14 @@ class ProductBidsListView(generics.ListAPIView):
         )
 
 
-class UserProductBidsListView(generics.ListAPIView):
+class UserProductBidsListView(ListAPIView):
     """
     This resource returns the list of bids for a specific product
     created by the current user
     """
 
     serializer_class = ProductBidsReadSerializer
-    permission_classes = [permissions.IsAuthenticated, IsProductCreator]
+    permission_classes = [IsAuthenticated, IsProductCreator]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):

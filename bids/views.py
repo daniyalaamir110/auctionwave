@@ -1,74 +1,58 @@
-from rest_framework import permissions, generics
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from .models import Bid
 from .serializers import (
     UserBidReadSerializer,
-    UserBidUpdateDeleteSerializer,
+    UserBidUpdateSerializer,
     BidWriteSerializer,
 )
 from common.paginations import StandardResultsSetPagination
 from common.permissions import IsBidder, IsBidProductValid
 
 
-class UserBidsListView(generics.ListAPIView):
-    """
-    This resource returns a list of bids the currently
-    logged in user has made. User must be logged in to
-    access this resource.
-    """
-
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = UserBidReadSerializer
+class UserBidsListView(ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
 
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return UserBidReadSerializer
+        elif self.request.method == "POST":
+            return BidWriteSerializer
+        return super().get_serializer_class()
+
     def get_queryset(self):
-        queryset = (
-            Bid.objects.filter(bidder=self.request.user)
-            .order_by("-created_at")
-            .select_related("product")
-        )
-
-        return queryset
-
-
-class UserBidsRetrieveView(generics.RetrieveAPIView):
-    """
-    This resource returns the bids done by the current user
-    on others' products.
-    """
-
-    queryset = Bid.objects.all().order_by("-created_at").select_related("product")
-    permission_classes = [permissions.IsAuthenticated, IsBidder]
-    serializer_class = UserBidReadSerializer
-
-
-class UserBidsUpdateView(generics.UpdateAPIView):
-    """
-    This resource lets update the bid amount of an existing bid
-    if the product is valid.
-    """
-
-    permission_classes = [permissions.IsAuthenticated, IsBidder, IsBidProductValid]
-    serializer_class = UserBidUpdateDeleteSerializer
-
-
-class UserBidsDeleteView(generics.DestroyAPIView):
-    """
-    This resource lets cancel an existing bid done by the user,
-    if the product is available.
-    """
-
-    queryset = Bid.objects.all().order_by("-created_at")
-    permission_classes = [permissions.IsAuthenticated, IsBidder, IsBidProductValid]
-
-
-class BidCreateView(generics.CreateAPIView):
-    """
-    This resource lets a user create a bid on a product, created by other
-    users that is available.
-    """
-
-    serializer_class = BidWriteSerializer
-    permission_classes = [permissions.IsAuthenticated]
+        if self.request.method == "GET":
+            return (
+                Bid.objects.filter(bidder=self.request.user)
+                .order_by("-created_at")
+                .select_related("product")
+            )
+        return Bid.objects.filter(bidder=self.request.user).order_by("-created_at")
 
     def perform_create(self, serializer):
         serializer.save(bidder=self.request.user)
+
+
+class UserBidsDetailView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated, IsBidder]
+
+    def get_queryset(self):
+        if self.request.method == "GET":
+            return Bid.objects.all().order_by("-created_at").select_related("product")
+        else:
+            Bid.objects.all().order_by("-created_at")
+        return super().get_queryset()
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return UserBidReadSerializer
+        elif self.request.method in ("POST", "PUT", "PATCH"):
+            return UserBidUpdateSerializer
+        return super().get_serializer_class()
+
+    def get_permissions(self):
+        permission_classes = [IsAuthenticated, IsBidder]
+        if self.request.method not in SAFE_METHODS:
+            permission_classes += IsBidProductValid
+        return permission_classes

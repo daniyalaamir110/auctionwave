@@ -3,7 +3,6 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.generics import UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.viewsets import GenericViewSet
 from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveAPIView,
@@ -23,7 +22,7 @@ class UserListView(ListCreateAPIView):
     search_fields = ["first_name", "last_name", "email", "username"]
 
 
-class UserRetrieveView(RetrieveAPIView):
+class UserDetailView(RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 

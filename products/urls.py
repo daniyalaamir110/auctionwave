@@ -1,10 +1,7 @@
-from django.urls import path, include
-from rest_framework import routers
+from django.urls import path
 from .views import (
-    ProductCreateView,
     ProductListView,
-    ProductRetrieveView,
-    ProductDeleteView,
+    ProductDetailView,
     CurrentUserProductListView,
     CurrentUserProductRetrieveView,
     ProductBidsListView,
@@ -14,20 +11,18 @@ from .views import (
 app_name = "products"
 
 urlpatterns = [
-    path("", ProductListView.as_view(), name="list_product"),
-    path("<int:pk>/", ProductRetrieveView.as_view(), name="retrieve_product"),
-    path("<int:pk>/bids/", ProductBidsListView.as_view(), name="product_bids_list"),
-    path("create/", ProductCreateView.as_view(), name="create_product"),
-    path("delete/<int:pk>/", ProductDeleteView.as_view(), name="delete_product"),
-    path("owned/", CurrentUserProductListView.as_view(), name="my_products"),
+    path("", ProductListView.as_view(), name="list"),
+    path("<int:pk>/", ProductDetailView.as_view(), name="detail"),
+    path("<int:pk>/bids/", ProductBidsListView.as_view(), name="bids_list"),
+    path("owned/", CurrentUserProductListView.as_view(), name="owned_list"),
     path(
         "owned/<int:pk>/",
         CurrentUserProductRetrieveView.as_view(),
-        name="my_product_bids_list",
+        name="owned_detail",
     ),
     path(
         "owned/<int:pk>/bids/",
         UserProductBidsListView.as_view(),
-        name="my_product",
+        name="owned_bids_list",
     ),
 ]

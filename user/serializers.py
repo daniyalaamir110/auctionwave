@@ -1,20 +1,20 @@
-from rest_framework import serializers, validators
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-from rest_framework.serializers import ValidationError
+from rest_framework.serializers import EmailField, CharField, ModelSerializer
+from rest_framework.validators import UniqueValidator
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(ModelSerializer):
     """
     This serializer contains the user basic info only
     """
 
-    email = serializers.EmailField(
+    email = EmailField(
         required=True,
-        validators=[validators.UniqueValidator(queryset=User.objects.all())],
+        validators=[UniqueValidator(queryset=User.objects.all())],
     )
 
-    password = serializers.CharField(
+    password = CharField(
         write_only=True,
         required=True,
         validators=[validate_password],
@@ -50,12 +50,12 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-class UserUpdatePasswordSerializer(serializers.ModelSerializer):
+class UserUpdatePasswordSerializer(ModelSerializer):
     """
     This serializer allows to update the password of a user
     """
 
-    password = serializers.CharField(
+    password = CharField(
         write_only=True,
         required=True,
         validators=[validate_password],

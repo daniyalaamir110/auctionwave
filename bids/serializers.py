@@ -31,7 +31,7 @@ class UserBidReadSerializer(serializers.ModelSerializer):
         exclude = ["bidder"]
 
 
-class UserBidUpdateDeleteSerializer(serializers.ModelSerializer):
+class UserBidUpdateSerializer(serializers.ModelSerializer):
     """
     Serializer with bid info of a product, along with bidder.
     """
