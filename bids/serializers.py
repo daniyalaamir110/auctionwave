@@ -2,7 +2,7 @@ from rest_framework import serializers, fields
 from .models import Bid
 from products.models import Product
 from products.serializers import ProductReadSerializer
-from user.serializers import UserReadSerializer
+from user.serializers import UserSerializer
 from datetime import datetime, timezone
 
 
@@ -12,7 +12,7 @@ class BidReadSerializer(serializers.ModelSerializer):
     """
 
     product = ProductReadSerializer(read_only=True)
-    bidder = UserReadSerializer(read_only=True)
+    bidder = UserSerializer(read_only=True)
 
     class Meta:
         model = Bid

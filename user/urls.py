@@ -1,14 +1,16 @@
-from django.urls import path, include
-from rest_framework import routers
-from .views import RegisterView, UserViewSet, EditUserView
+from django.urls import path
+from .views import (
+    UserListView,
+    UserMeDetailView,
+    UserUpdatePasswordView,
+    UserRetrieveView,
+)
 
 app_name = "user"
 
-user_router = routers.DefaultRouter()
-user_router.register("", UserViewSet)
-
 urlpatterns = [
-    path("register/", RegisterView.as_view(), name="register"),
-    path("edit/", EditUserView.as_view(), name="user_edit"),
-    path("", include(user_router.urls)),
+    path("", UserListView.as_view(), name="list"),
+    path("<int:pk>/", UserRetrieveView.as_view(), name="retrieve"),
+    path("me/", UserMeDetailView.as_view(), name="me"),
+    path("me/password/", UserUpdatePasswordView.as_view(), name="me_password"),
 ]

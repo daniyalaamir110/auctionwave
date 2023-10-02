@@ -22,6 +22,7 @@ class Product(TimestampedModel):
     description = models.CharField(max_length=500, verbose_name="Product Description")
     base_price = models.PositiveIntegerField(verbose_name="Base Price")
     valid_till = models.DateTimeField(validators=[no_past], verbose_name="Valid Till")
+    is_sold = models.BooleanField(default=False)
 
     # Foreign keys
     category = models.ForeignKey(

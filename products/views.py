@@ -10,6 +10,7 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from common.paginations import StandardResultsSetPagination
 from common.permissions import IsProductCreator
+from bids.models import Bid
 
 
 class ProductRetrieveView(generics.RetrieveAPIView):
@@ -20,7 +21,9 @@ class ProductRetrieveView(generics.RetrieveAPIView):
     serializer_class = ProductReadSerializer
 
     # Only includes the available products
-    queryset = Product.objects.filter(valid_till__gte=datetime.now(tz=timezone.utc))
+    queryset = Product.objects.filter(
+        valid_till__gte=datetime.now(tz=timezone.utc)
+    ).select_related("category", "creator")
 
 
 class ProductListView(generics.ListAPIView):
@@ -36,9 +39,11 @@ class ProductListView(generics.ListAPIView):
 
     def get_queryset(self):
         # Filter the products which are available
-        queryset = Product.objects.filter(
-            valid_till__gte=datetime.now(tz=timezone.utc)
-        ).order_by("-created_at")
+        queryset = (
+            Product.objects.filter(valid_till__gte=datetime.now(tz=timezone.utc))
+            .order_by("-created_at")
+            .select_related("category", "creator")
+        )
 
         # Get the ?query=& params from request
         category_id = self.request.query_params.get("category", None)
@@ -87,9 +92,13 @@ class CurrentUserProductListView(generics.ListAPIView):
     search_fields = ["title"]
 
     def get_queryset(self):
-        queryset = Product.objects.filter(
-            creator_id=self.request.user.pk,
-        ).order_by("-created_at")
+        queryset = (
+            Product.objects.filter(
+                creator_id=self.request.user.pk,
+            )
+            .order_by("-created_at")
+            .select_related("category")
+        )
 
         # Get the ?query=& params from request
         category_id = self.request.query_params.get("category", None)
@@ -126,7 +135,7 @@ class CurrentUserProductRetrieveView(generics.RetrieveAPIView):
     Must be logged in to access.
     """
 
-    queryset = Product.objects.all().order_by("-created_at")
+    queryset = Product.objects.all().order_by("-created_at").select_related("category")
     serializer_class = ProductReadSerializer
     permission_classes = [permissions.IsAuthenticated, IsProductCreator]
 
@@ -149,26 +158,43 @@ class ProductDeleteView(generics.DestroyAPIView):
     This resource lets delete a product out of the owned products.
     """
 
-    queryset = Product.objects.all().order_by("-created_at")
+    queryset = Product.objects.all().order_by("-created_at").select_related("creator")
     permission_classes = [permissions.IsAuthenticated, IsProductCreator]
 
 
-class ProductBidsListView(generics.RetrieveAPIView):
+class ProductBidsListView(generics.ListAPIView):
     """
     This resource returns the list of bids for a specific product
     which is valid.
     """
 
     serializer_class = ProductBidsReadSerializer
-    queryset = Product.objects.filter(valid_till__gte=datetime.now(tz=timezone.utc))
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        return (
+            Bid.objects.filter(product__id=self.kwargs["pk"])
+            .order_by("-bid_amount")
+            .select_related("bidder")
+        )
 
 
-class UserProductBidsListView(generics.RetrieveAPIView):
+class UserProductBidsListView(generics.ListAPIView):
     """
     This resource returns the list of bids for a specific product
     created by the current user
     """
 
-    queryset = Product.objects.all().order_by("-created_at")
     serializer_class = ProductBidsReadSerializer
     permission_classes = [permissions.IsAuthenticated, IsProductCreator]
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        return (
+            Bid.objects.filter(
+                product__id=self.kwargs["pk"],
+                product__creator__id=self.request.user.id,
+            )
+            .order_by("-bid_amount")
+            .select_related("bidder")
+        )

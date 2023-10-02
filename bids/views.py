@@ -21,7 +21,11 @@ class UserBidsListView(generics.ListAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        queryset = Bid.objects.filter(bidder=self.request.user).order_by("-created_at")
+        queryset = (
+            Bid.objects.filter(bidder=self.request.user)
+            .order_by("-created_at")
+            .select_related("product")
+        )
 
         return queryset
 
@@ -32,7 +36,7 @@ class UserBidsRetrieveView(generics.RetrieveAPIView):
     on others' products.
     """
 
-    queryset = Bid.objects.all().order_by("-created_at")
+    queryset = Bid.objects.all().order_by("-created_at").select_related("product")
     permission_classes = [permissions.IsAuthenticated, IsBidder]
     serializer_class = UserBidReadSerializer
 
@@ -43,7 +47,6 @@ class UserBidsUpdateView(generics.UpdateAPIView):
     if the product is valid.
     """
 
-    queryset = Bid.objects.all().order_by("-created_at")
     permission_classes = [permissions.IsAuthenticated, IsBidder, IsBidProductValid]
     serializer_class = UserBidUpdateDeleteSerializer
 

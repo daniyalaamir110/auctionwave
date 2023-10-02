@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from categories.serializers import CategorySerializer
-from user.serializers import UserReadSerializer
+from user.serializers import UserSerializer
 from .models import Product
 from django.core.exceptions import ValidationError
 from datetime import datetime, timezone
@@ -8,7 +8,7 @@ from bids.models import Bid
 
 
 class ProductBidReadSerializer(serializers.ModelSerializer):
-    bidder = UserReadSerializer(read_only=True)
+    bidder = UserSerializer(read_only=True)
 
     class Meta:
         model = Bid
@@ -16,16 +16,16 @@ class ProductBidReadSerializer(serializers.ModelSerializer):
 
 
 class ProductBidsReadSerializer(serializers.ModelSerializer):
-    bids = ProductBidReadSerializer(read_only=True, many=True)
+    bidder = UserSerializer(read_only=True)
 
     class Meta:
-        model = Product
-        fields = ["bids"]
+        model = Bid
+        exclude = ["product"]
 
 
 class ProductReadSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
-    creator = UserReadSerializer(read_only=True)
+    creator = UserSerializer(read_only=True)
     is_available = serializers.BooleanField(read_only=True)
     time_left = serializers.CharField(read_only=True)
     highest_bid = ProductBidReadSerializer(read_only=True)
