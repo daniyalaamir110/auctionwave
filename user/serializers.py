@@ -1,6 +1,11 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-from rest_framework.serializers import EmailField, CharField, ModelSerializer
+from rest_framework.serializers import (
+    EmailField,
+    CharField,
+    ModelSerializer,
+    Serializer,
+)
 from rest_framework.validators import UniqueValidator
 
 
@@ -64,3 +69,8 @@ class UserUpdatePasswordSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = ["password"]
+
+
+class UsernameSuggestionSerializer(Serializer):
+    first_name = CharField(required=True)
+    last_name = CharField(required=True)

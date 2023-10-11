@@ -7,9 +7,15 @@ from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveAPIView,
     RetrieveUpdateAPIView,
+    CreateAPIView,
 )
+from django.db.models.query import Q
 from rest_framework.filters import SearchFilter
-from .serializers import UserSerializer, UserUpdatePasswordSerializer
+from .serializers import (
+    UserSerializer,
+    UserUpdatePasswordSerializer,
+    UsernameSuggestionSerializer,
+)
 from common.paginations import StandardResultsSetPagination
 from django.contrib.auth.models import User
 
@@ -58,3 +64,57 @@ class UserUpdatePasswordView(UpdateAPIView):
             return Response(None, status=HTTP_200_OK)
         else:
             return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+
+
+class UsernameSuggestionView(CreateAPIView):
+    serializer_class = UsernameSuggestionSerializer
+
+    @action(methods="POST", detail=False)
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            first_name = serializer.validated_data.get("first_name")
+            last_name = serializer.validated_data.get("last_name")
+
+            # Generate username suggestions
+            suggestions = self.generate_username_suggestions(first_name, last_name)
+
+            return Response(suggestions, status=HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+
+    def generate_username_suggestions(self, first_name, last_name):
+        first_name = first_name.lower()
+        last_name = last_name.lower()
+
+        prefixes = [
+            f"{first_name[0]}{last_name}",
+            f"{first_name}{last_name[0]}",
+            f"{first_name}.{last_name}",
+        ]
+
+        existing_users = User.objects.filter(
+            Q(username__startswith=prefixes[0])
+            | Q(username__iexact=prefixes[0])
+            | Q(username__startswith=prefixes[1])
+            | Q(username__iexact=prefixes[1])
+            | Q(username__startswith=prefixes[2])
+            | Q(username__iexact=prefixes[2])
+        )
+
+        suggestions = []
+
+        for prefix in prefixes:
+            x = 0
+            attempts = 0
+            active = True
+            while active and attempts < 10:
+                if (existing_users.filter(username=f"{prefix}{x}")).exists():
+                    x += 1
+                    attempts += 1
+                else:
+                    suggestions.append(f"{prefix}{x}")
+                    active = False
+
+        return suggestions
