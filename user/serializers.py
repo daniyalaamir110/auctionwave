@@ -74,3 +74,11 @@ class UserUpdatePasswordSerializer(ModelSerializer):
 class UsernameSuggestionSerializer(Serializer):
     first_name = CharField(required=True)
     last_name = CharField(required=True)
+
+
+class UsernameAvailabilitySerializer(Serializer):
+    username = CharField(required=True)
+
+
+class EmailAvailabilitySerializer(Serializer):
+    email = EmailField(required=True)

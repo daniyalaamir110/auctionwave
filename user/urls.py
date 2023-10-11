@@ -5,6 +5,8 @@ from .views import (
     UserUpdatePasswordView,
     UserDetailView,
     UsernameSuggestionView,
+    UsernameAvailabilityView,
+    EmailAvailabilityView,
 )
 
 app_name = "user"
@@ -18,5 +20,15 @@ urlpatterns = [
         "username-suggestions/",
         UsernameSuggestionView.as_view(),
         name="username_suggestion",
+    ),
+    path(
+        "username-availability/",
+        UsernameAvailabilityView.as_view(),
+        name="username_availability",
+    ),
+    path(
+        "email-availability/",
+        EmailAvailabilityView.as_view(),
+        name="email_availability",
     ),
 ]

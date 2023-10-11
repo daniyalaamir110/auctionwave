@@ -2,7 +2,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.generics import UpdateAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveAPIView,
@@ -15,6 +15,8 @@ from .serializers import (
     UserSerializer,
     UserUpdatePasswordSerializer,
     UsernameSuggestionSerializer,
+    EmailAvailabilitySerializer,
+    UsernameAvailabilitySerializer,
 )
 from common.paginations import StandardResultsSetPagination
 from django.contrib.auth.models import User
@@ -68,6 +70,7 @@ class UserUpdatePasswordView(UpdateAPIView):
 
 class UsernameSuggestionView(CreateAPIView):
     serializer_class = UsernameSuggestionSerializer
+    permission_classes = [AllowAny]
 
     @action(methods="POST", detail=False)
     def create(self, request):
@@ -118,3 +121,39 @@ class UsernameSuggestionView(CreateAPIView):
                     active = False
 
         return suggestions
+
+
+class UsernameAvailabilityView(CreateAPIView):
+    serializer_class = UsernameAvailabilitySerializer
+
+    @action(methods="POST", detail=False)
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            username = serializer.validated_data.get("username")
+
+            available = not (User.objects.filter(username=username).exists())
+
+            return Response(available, status=HTTP_200_OK)
+
+        else:
+            return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+
+
+class EmailAvailabilityView(CreateAPIView):
+    serializer_class = EmailAvailabilitySerializer
+
+    @action(methods="POST", detail=False)
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            email = serializer.validated_data.get("email")
+
+            available = not (User.objects.filter(email=email).exists())
+
+            return Response(available, status=HTTP_200_OK)
+
+        else:
+            return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
