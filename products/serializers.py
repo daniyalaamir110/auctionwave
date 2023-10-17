@@ -53,6 +53,8 @@ class ProductReadSerializer(serializers.ModelSerializer):
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(required=True)
+
     class Meta:
         model = Product
         fields = [
@@ -61,6 +63,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             "category",
             "base_price",
             "valid_till",
+            "image",
         ]
 
     def validate(self, attrs):

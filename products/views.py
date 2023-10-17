@@ -18,6 +18,7 @@ from rest_framework.generics import (
 )
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
 class ProductDetailView(RetrieveDestroyAPIView):
@@ -38,6 +39,7 @@ class ProductListView(ListCreateAPIView):
     pagination_class = StandardResultsSetPagination
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ["title"]
+    parser_classes = [MultiPartParser, FormParser]
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_serializer_class(self):

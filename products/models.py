@@ -2,13 +2,19 @@ from django.db import models
 from common.models import TimestampedModel
 from datetime import datetime, timedelta, timezone
 from django.core.exceptions import ValidationError
-from django.contrib import admin
+import uuid
 
 
 def no_past(value):
     now = datetime.now(tz=timezone.utc)
     if value < now:
         raise ValidationError("valid_till cannot be in the past.")
+
+
+def upload_to(instance, filename):
+    ext = filename.split(sep=".")[-1]
+    filename = uuid.uuid1()
+    return "images/{filename}.{ext}".format(filename=filename, ext=ext)
 
 
 class Product(TimestampedModel):
@@ -23,6 +29,7 @@ class Product(TimestampedModel):
     base_price = models.PositiveIntegerField(verbose_name="Base Price")
     valid_till = models.DateTimeField(validators=[no_past], verbose_name="Valid Till")
     is_sold = models.BooleanField(default=False)
+    image = models.ImageField(upload_to=upload_to)
 
     # Foreign keys
     category = models.ForeignKey(
