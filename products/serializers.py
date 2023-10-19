@@ -37,6 +37,7 @@ class ProductReadSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "description",
+            "image",
             "base_price",
             "valid_till",
             "category",
@@ -45,6 +46,8 @@ class ProductReadSerializer(serializers.ModelSerializer):
             "time_left",
             "highest_bid",
             "bid_count",
+            "created_at",
+            "updated_at",
         ]
         extra_kwargs = {
             "id": {"read_only": True},
