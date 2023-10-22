@@ -167,13 +167,13 @@ class ProductBidsListView(ListAPIView):
     """
 
     serializer_class = ProductBidsReadSerializer
-    pagination_class = StandardResultsSetPagination
+    # pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         return (
             Bid.objects.filter(product__id=self.kwargs["pk"])
-            .order_by("-bid_amount")
-            .select_related("bidder")
+            .order_by("-bid_amount", "updated_at")
+            .select_related("bidder")[:5]
         )
 
 
