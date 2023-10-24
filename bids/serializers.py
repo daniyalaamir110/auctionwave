@@ -13,6 +13,7 @@ class BidReadSerializer(serializers.ModelSerializer):
 
     product = ProductReadSerializer(read_only=True)
     bidder = UserSerializer(read_only=True)
+    rank = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Bid
@@ -25,6 +26,7 @@ class UserBidReadSerializer(serializers.ModelSerializer):
     """
 
     product = ProductReadSerializer(read_only=True)
+    rank = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Bid

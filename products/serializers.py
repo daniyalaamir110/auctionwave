@@ -9,6 +9,7 @@ from bids.models import Bid
 
 class ProductBidReadSerializer(serializers.ModelSerializer):
     bidder = UserSerializer(read_only=True)
+    rank = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Bid
@@ -17,6 +18,7 @@ class ProductBidReadSerializer(serializers.ModelSerializer):
 
 class ProductBidsReadSerializer(serializers.ModelSerializer):
     bidder = UserSerializer(read_only=True)
+    rank = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Bid
@@ -31,6 +33,7 @@ class ProductReadSerializer(serializers.ModelSerializer):
     highest_bid = ProductBidReadSerializer(read_only=True)
     current_user_bid = serializers.SerializerMethodField(read_only=True)
     bid_count = serializers.IntegerField(read_only=True)
+    is_creator = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -48,13 +51,13 @@ class ProductReadSerializer(serializers.ModelSerializer):
             "highest_bid",
             "current_user_bid",
             "bid_count",
+            "is_creator",
             "created_at",
             "updated_at",
         ]
         extra_kwargs = {
             "id": {"read_only": True},
             "highest_bid": {"read_only": True},
-            "current_user_bid": {"read_only": True},
         }
 
     def get_current_user_bid(self, obj):
@@ -69,6 +72,13 @@ class ProductReadSerializer(serializers.ModelSerializer):
 
         else:
             return None
+
+    def get_is_creator(self, obj):
+        current_user = self.context["request"].user
+
+        is_creator = obj.creator.id == current_user.id
+
+        return is_creator
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):

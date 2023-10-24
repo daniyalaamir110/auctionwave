@@ -48,3 +48,7 @@ class Bid(TimestampedModel):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+    @property
+    def rank(self):
+        return list(self.product.bids.all().order_by("-bid_amount")).index(self) + 1

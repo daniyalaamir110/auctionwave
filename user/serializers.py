@@ -5,6 +5,7 @@ from rest_framework.serializers import (
     CharField,
     ModelSerializer,
     Serializer,
+    BooleanField,
 )
 from rest_framework.validators import UniqueValidator
 
@@ -25,6 +26,8 @@ class UserSerializer(ModelSerializer):
         validators=[validate_password],
     )
 
+    is_self = BooleanField(read_only=True)  # New field
+
     class Meta:
         model = User
         fields = [
@@ -34,6 +37,7 @@ class UserSerializer(ModelSerializer):
             "first_name",
             "last_name",
             "password",
+            "is_self",
         ]
 
         extra_kwargs = {
@@ -53,6 +57,13 @@ class UserSerializer(ModelSerializer):
         user.save()
 
         return user
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            data["is_self"] = instance == request.user
+        return data
 
 
 class UserUpdatePasswordSerializer(ModelSerializer):
