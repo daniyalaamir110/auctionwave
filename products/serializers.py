@@ -29,6 +29,7 @@ class ProductReadSerializer(serializers.ModelSerializer):
     is_available = serializers.BooleanField(read_only=True)
     time_left = serializers.CharField(read_only=True)
     highest_bid = ProductBidReadSerializer(read_only=True)
+    current_user_bid = serializers.SerializerMethodField(read_only=True)
     bid_count = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -45,6 +46,7 @@ class ProductReadSerializer(serializers.ModelSerializer):
             "is_available",
             "time_left",
             "highest_bid",
+            "current_user_bid",
             "bid_count",
             "created_at",
             "updated_at",
@@ -52,7 +54,21 @@ class ProductReadSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "id": {"read_only": True},
             "highest_bid": {"read_only": True},
+            "current_user_bid": {"read_only": True},
         }
+
+    def get_current_user_bid(self, obj):
+        current_user = self.context["request"].user
+
+        if current_user.id:
+            try:
+                current_user_bid = obj.bids.get(bidder=current_user)
+                return ProductBidReadSerializer(current_user_bid).data
+            except Bid.DoesNotExist:
+                return None
+
+        else:
+            return None
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):

@@ -41,8 +41,8 @@ class UserBidsDetailView(RetrieveUpdateDestroyAPIView):
         if self.request.method == "GET":
             return Bid.objects.all().order_by("-created_at").select_related("product")
         else:
-            Bid.objects.all().order_by("-created_at")
-        return super().get_queryset()
+            return Bid.objects.all().order_by("-created_at")
+        # return super().get_queryset()
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -52,7 +52,7 @@ class UserBidsDetailView(RetrieveUpdateDestroyAPIView):
         return super().get_serializer_class()
 
     def get_permissions(self):
-        permission_classes = [IsAuthenticated, IsBidder]
+        self.permission_classes = [IsAuthenticated, IsBidder]
         if self.request.method not in SAFE_METHODS:
-            permission_classes += IsBidProductValid
-        return permission_classes
+            self.permission_classes.append(IsBidProductValid)
+        return super().get_permissions()
