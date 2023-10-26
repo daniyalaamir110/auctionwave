@@ -4,7 +4,7 @@ from .models import Category
 from .serializers import CategorySerializer
 from common.paginations import StandardResultsSetPagination
 from common.permissions import IsAdminUserOrReadOnly
-
+from rest_framework.parsers import FormParser, MultiPartParser
 
 class CategoryViewSet(ModelViewSet):
     """
@@ -17,5 +17,6 @@ class CategoryViewSet(ModelViewSet):
     serializer_class = CategorySerializer
     pagination_class = StandardResultsSetPagination
     permission_classes = [IsAdminUserOrReadOnly]
+    parser_classes=[FormParser, MultiPartParser]
     filter_backends = [SearchFilter]
     search_fields = ["title"]

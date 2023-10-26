@@ -58,7 +58,7 @@ class Product(TimestampedModel):
         if self.is_available:
             time_left = self.valid_till - datetime.now(tz=timezone.utc)
 
-        return str(time_left)
+        return time_left
 
     @property
     def highest_bid(self):
@@ -70,6 +70,15 @@ class Product(TimestampedModel):
     @property
     def bid_count(self):
         return self.bids.count()
+    
+    @property
+    def status(self):
+        if self.valid_till < datetime.now(tz=timezone.utc):
+            return "ongoing"
+        elif self.is_sold:
+            return "sold"
+        else:
+            return "finished"
 
     def clean(self):
         now = datetime.now(tz=timezone.utc)

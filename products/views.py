@@ -124,8 +124,12 @@ class CurrentUserProductListView(ListAPIView):
         category_id = self.request.query_params.get("category", None)
         min_price = self.request.query_params.get("min_price", None)
         max_price = self.request.query_params.get("max_price", None)
+        status = self.request.query_params.get("status", None)
 
         # Apply filters
+        if status:
+            queryset = queryset.filter(status=status)
+
         if category_id:
             queryset = queryset.filter(category_id=category_id)
 
@@ -142,6 +146,7 @@ class CurrentUserProductListView(ListAPIView):
             openapi.Parameter("category", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
             openapi.Parameter("min_price", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
             openapi.Parameter("max_price", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
+            openapi.Parameter("status", openapi.IN_QUERY, type=openapi.TYPE_STRING, enum=["ongoing", "finished", "sold"]),
         ],
         responses={200: ProductReadSerializer(many=True)},
     )

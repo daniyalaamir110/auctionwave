@@ -34,6 +34,7 @@ class ProductReadSerializer(serializers.ModelSerializer):
     current_user_bid = serializers.SerializerMethodField(read_only=True)
     bid_count = serializers.IntegerField(read_only=True)
     is_creator = serializers.SerializerMethodField()
+    status = serializers.CharField(read_only=True)
 
     class Meta:
         model = Product
@@ -44,6 +45,8 @@ class ProductReadSerializer(serializers.ModelSerializer):
             "image",
             "base_price",
             "valid_till",
+            "is_sold",
+            "status",
             "category",
             "creator",
             "is_available",
