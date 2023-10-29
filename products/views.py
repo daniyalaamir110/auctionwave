@@ -67,6 +67,7 @@ class ProductListView(ListCreateAPIView):
             min_price = self.request.query_params.get("min_price", None)
             max_price = self.request.query_params.get("max_price", None)
             creator_id = self.request.query_params.get("creator", None)
+            status = self.request.query_params.get("status", None)
 
             # Apply filters
             if creator_id:
@@ -81,6 +82,9 @@ class ProductListView(ListCreateAPIView):
             if max_price:
                 queryset = queryset.filter(base_price__lte=max_price)
 
+            if status:
+                queryset = [o for o in queryset.all() if o.status == status]
+
             return queryset
 
         elif self.request.method == "POST":
@@ -92,6 +96,8 @@ class ProductListView(ListCreateAPIView):
             openapi.Parameter("creator", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
             openapi.Parameter("min_price", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
             openapi.Parameter("max_price", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
+            openapi.Parameter("status", openapi.IN_QUERY, type=openapi.TYPE_STRING, enum=["ongoing", "finished", "sold"]),
+
         ],
         responses={200: ProductReadSerializer(many=True)},
     )
@@ -106,10 +112,11 @@ class CurrentUserProductListView(ListAPIView):
     """
 
     serializer_class = ProductReadSerializer
-    permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ["title"]
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = (
@@ -127,9 +134,6 @@ class CurrentUserProductListView(ListAPIView):
         status = self.request.query_params.get("status", None)
 
         # Apply filters
-        if status:
-            queryset = queryset.filter(status=status)
-
         if category_id:
             queryset = queryset.filter(category_id=category_id)
 
@@ -138,6 +142,9 @@ class CurrentUserProductListView(ListAPIView):
 
         if max_price:
             queryset = queryset.filter(base_price__lte=max_price)
+
+        if status:
+            queryset = [o for o in queryset.all() if o.status == status]
 
         return queryset
 

@@ -73,10 +73,10 @@ class Product(TimestampedModel):
     
     @property
     def status(self):
-        if self.valid_till < datetime.now(tz=timezone.utc):
-            return "ongoing"
-        elif self.is_sold:
+        if self.is_sold:
             return "sold"
+        elif self.valid_till > datetime.now(tz=timezone.utc):
+            return "ongoing"
         else:
             return "finished"
 
