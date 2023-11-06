@@ -21,6 +21,20 @@ class IsProductCreator(BasePermission):
             raise exceptions.PermissionDenied("You are not the creator of this product")
 
         return True
+    
+class IsProductAuctionEnded(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if obj.is_available:
+            raise exceptions.PermissionDenied("The auction has not ended yet")
+
+        return True
+    
+class IsProductNotSold(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if obj.sold:
+            raise exceptions.PermissionDenied("The product has been sold")
+
+        return True
 
 
 class IsBidder(BasePermission):

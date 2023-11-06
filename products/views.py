@@ -8,17 +8,21 @@ from datetime import datetime, timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from common.paginations import StandardResultsSetPagination
-from common.permissions import IsProductCreator
+from common.permissions import IsProductCreator, IsProductAuctionEnded, IsProductNotSold
 from bids.models import Bid
 from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveDestroyAPIView,
     ListAPIView,
     RetrieveAPIView,
+    UpdateAPIView,
 )
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
+from rest_framework.status import HTTP_200_OK
+from django.db.models.query import Q
 
 
 class ProductDetailView(RetrieveDestroyAPIView):
@@ -30,8 +34,9 @@ class ProductDetailView(RetrieveDestroyAPIView):
 
     def get_permissions(self):
         if self.request.method == "DELETE":
-            return [IsAuthenticated, IsProductCreator]
+            return [IsAuthenticated(), IsProductCreator()]
         return super().get_permissions()
+    
 
 
 class ProductListView(ListCreateAPIView):
@@ -67,6 +72,7 @@ class ProductListView(ListCreateAPIView):
             min_price = self.request.query_params.get("min_price", None)
             max_price = self.request.query_params.get("max_price", None)
             creator_id = self.request.query_params.get("creator", None)
+            exclude = self.request.query_params.get("exclude", None)
             status = self.request.query_params.get("status", None)
 
             # Apply filters
@@ -76,6 +82,9 @@ class ProductListView(ListCreateAPIView):
             if category_id:
                 queryset = queryset.filter(category_id=category_id)
 
+            if exclude:
+                queryset = queryset.filter(~Q(id=exclude))
+
             if min_price:
                 queryset = queryset.filter(base_price__gte=min_price)
 
@@ -83,7 +92,8 @@ class ProductListView(ListCreateAPIView):
                 queryset = queryset.filter(base_price__lte=max_price)
 
             if status:
-                queryset = [o for o in queryset.all() if o.status == status]
+                ids = [o.id for o in queryset.all() if o.status == status]
+                queryset = queryset.filter(pk__in=ids)
 
             return queryset
 
@@ -93,11 +103,16 @@ class ProductListView(ListCreateAPIView):
     @swagger_auto_schema(
         manual_parameters=[
             openapi.Parameter("category", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
+            openapi.Parameter("exclude", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
             openapi.Parameter("creator", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
             openapi.Parameter("min_price", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
             openapi.Parameter("max_price", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
-            openapi.Parameter("status", openapi.IN_QUERY, type=openapi.TYPE_STRING, enum=["ongoing", "finished", "sold"]),
-
+            openapi.Parameter(
+                "status",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                enum=["ongoing", "finished", "sold"],
+            ),
         ],
         responses={200: ProductReadSerializer(many=True)},
     )
@@ -144,7 +159,8 @@ class CurrentUserProductListView(ListAPIView):
             queryset = queryset.filter(base_price__lte=max_price)
 
         if status:
-            queryset = [o for o in queryset.all() if o.status == status]
+            ids = [o.id for o in queryset.all() if o.status == status]
+            queryset = queryset.filter(pk__in=ids)
 
         return queryset
 
@@ -153,7 +169,12 @@ class CurrentUserProductListView(ListAPIView):
             openapi.Parameter("category", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
             openapi.Parameter("min_price", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
             openapi.Parameter("max_price", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
-            openapi.Parameter("status", openapi.IN_QUERY, type=openapi.TYPE_STRING, enum=["ongoing", "finished", "sold"]),
+            openapi.Parameter(
+                "status",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                enum=["ongoing", "finished", "sold"],
+            ),
         ],
         responses={200: ProductReadSerializer(many=True)},
     )
@@ -174,12 +195,11 @@ class CurrentUserProductRetrieveView(RetrieveAPIView):
 
 class ProductBidsListView(ListAPIView):
     """
-    This resource returns the list of bids for a specific product
+    This resource returns the top 5 list of bids for a specific product
     which is valid.
     """
 
     serializer_class = ProductBidsReadSerializer
-    # pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         return (
@@ -208,3 +228,24 @@ class UserProductBidsListView(ListAPIView):
             .order_by("-bid_amount")
             .select_related("bidder")
         )
+
+
+class ProductSellView(UpdateAPIView):
+    """
+    This resource marks an item as sold
+    """
+
+    queryset = Product.objects.all()
+    permission_classes = [
+        IsAuthenticated,
+        IsProductCreator,
+        IsProductAuctionEnded,
+        IsProductNotSold,
+    ]
+    lookup_field = "id"
+
+    def update(self):
+        instance = self.get_object()
+        instance.sold = True
+        instance.save()
+        return Response({"detail": "Product marked as sold"}, status=HTTP_200_OK)

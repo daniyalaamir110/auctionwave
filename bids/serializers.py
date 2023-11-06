@@ -27,10 +27,27 @@ class UserBidReadSerializer(serializers.ModelSerializer):
 
     product = ProductReadSerializer(read_only=True)
     rank = serializers.IntegerField(read_only=True)
+    status = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Bid
         exclude = ["bidder"]
+
+
+    def get_status(self, obj):
+
+        if obj.product.status == "ongoing":
+            return "pending"
+
+        highest_bidder = obj.product.highest_bid.bidder
+
+        current_user = self.context["request"].user
+
+        if (highest_bidder == current_user):
+            return "won"
+
+        return "lost"
 
 
 class UserBidUpdateSerializer(serializers.ModelSerializer):
