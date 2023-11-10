@@ -2,6 +2,7 @@ from django.db import models
 from common.models import TimestampedModel
 from datetime import datetime, timedelta, timezone
 from django.core.exceptions import ValidationError
+from config.settings import AUTH_USER_MODEL
 import uuid
 
 
@@ -14,7 +15,7 @@ def no_past(value):
 def upload_to(instance, filename):
     ext = filename.split(sep=".")[-1]
     filename = uuid.uuid1()
-    return "images/{filename}.{ext}".format(filename=filename, ext=ext)
+    return "images/products/{filename}.{ext}".format(filename=filename, ext=ext)
 
 
 class Product(TimestampedModel):
@@ -39,7 +40,7 @@ class Product(TimestampedModel):
         verbose_name="Category",
     )
     creator = models.ForeignKey(
-        "auth.User",
+        AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="products",
         verbose_name="Creator",

@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
-from django.contrib.auth.models import User
+from user.models import User
 from .models import Product
 from categories.models import Category
 from datetime import datetime, timedelta, timezone

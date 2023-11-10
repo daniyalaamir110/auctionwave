@@ -11,15 +11,17 @@ from rest_framework.generics import (
 )
 from django.db.models.query import Q
 from rest_framework.filters import SearchFilter
+from rest_framework.parsers import FormParser, MultiPartParser
 from .serializers import (
     UserSerializer,
     UserUpdatePasswordSerializer,
     UsernameSuggestionSerializer,
     EmailAvailabilitySerializer,
     UsernameAvailabilitySerializer,
+    ProfileImageUpdateSerializer,
 )
 from common.paginations import StandardResultsSetPagination
-from django.contrib.auth.models import User
+from user.models import User
 
 
 class UserListView(ListCreateAPIView):
@@ -45,7 +47,7 @@ class UserMeDetailView(RetrieveUpdateAPIView):
         return Response(serializer.data, status=HTTP_200_OK)
 
     @action(detail=False, methods=["PATCH"], url_path="")
-    def update(self, request):
+    def partial_update(self, request):
         serializer = self.get_serializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -57,6 +59,24 @@ class UserMeDetailView(RetrieveUpdateAPIView):
 class UserUpdatePasswordView(UpdateAPIView):
     serializer_class = UserUpdatePasswordSerializer
     permission_classes = [IsAuthenticated]
+
+    @action(methods=["PUT"], detail=False)
+    def update(self, request):
+        serializer = self.get_serializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(None, status=HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+
+
+class ProfileImageUpdateView(UpdateAPIView):
+    serializer_class = ProfileImageUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = (
+        FormParser,
+        MultiPartParser,
+    )
 
     @action(methods=["PUT"], detail=False)
     def update(self, request):

@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from user.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.serializers import (
     EmailField,
@@ -6,6 +6,7 @@ from rest_framework.serializers import (
     ModelSerializer,
     Serializer,
     BooleanField,
+    ImageField
 )
 from rest_framework.validators import UniqueValidator
 
@@ -26,7 +27,7 @@ class UserSerializer(ModelSerializer):
         validators=[validate_password],
     )
 
-    is_self = BooleanField(read_only=True)  # New field
+    is_self = BooleanField(read_only=True)
 
     class Meta:
         model = User
@@ -38,11 +39,13 @@ class UserSerializer(ModelSerializer):
             "last_name",
             "password",
             "is_self",
+            "profile_image"
         ]
 
         extra_kwargs = {
             "first_name": {"required": True},
             "last_name": {"required": True},
+            "profile_image": {"required": True}
         }
 
     def create(self, validated_data):
@@ -93,3 +96,9 @@ class UsernameAvailabilitySerializer(Serializer):
 
 class EmailAvailabilitySerializer(Serializer):
     email = EmailField(required=True)
+
+
+class ProfileImageUpdateSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('profile_image',)

@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
-import os
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -43,12 +42,12 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "user",
     "corsheaders",
     "rest_framework",
     "rest_framework.authtoken",
     "drf_yasg",
     "common",
-    "user",
     "categories",
     "products",
     "bids",
@@ -130,6 +129,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTH_USER_MODEL = 'user.User'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/

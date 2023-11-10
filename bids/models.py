@@ -2,6 +2,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from common.models import TimestampedModel
 from datetime import datetime, timezone
+from config.settings import AUTH_USER_MODEL
 
 
 class Bid(TimestampedModel):
@@ -18,7 +19,7 @@ class Bid(TimestampedModel):
 
     # Foreign keys
     bidder = models.ForeignKey(
-        "auth.User",
+        AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="bids",
         verbose_name="Bidder",
