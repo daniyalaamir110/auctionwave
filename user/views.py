@@ -82,8 +82,11 @@ class ProfileImageUpdateView(UpdateAPIView):
     def update(self, request):
         serializer = self.get_serializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
-            return Response(None, status=HTTP_200_OK)
+            instance = serializer.save()
+            profile_image_url = self.request.build_absolute_uri(
+                instance.profile_image.url
+            )
+            return Response({"profile_image": profile_image_url}, status=HTTP_200_OK)
         else:
             return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
 
