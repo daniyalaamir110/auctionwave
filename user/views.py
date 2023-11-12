@@ -90,6 +90,17 @@ class ProfileImageUpdateView(UpdateAPIView):
         else:
             return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
 
+    @action(methods=["DELETE"], detail=False)
+    def delete(self, request):
+        serializer = self.get_serializer(
+            request.user, data={"profile_image": None}, partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(None, status=HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+
 
 class UsernameSuggestionView(CreateAPIView):
     serializer_class = UsernameSuggestionSerializer
