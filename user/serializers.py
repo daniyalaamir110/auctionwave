@@ -6,7 +6,6 @@ from rest_framework.serializers import (
     ModelSerializer,
     Serializer,
     BooleanField,
-    ImageField
 )
 from rest_framework.validators import UniqueValidator
 
@@ -39,13 +38,13 @@ class UserSerializer(ModelSerializer):
             "last_name",
             "password",
             "is_self",
-            "profile_image"
+            "profile_image",
         ]
 
         extra_kwargs = {
             "first_name": {"required": True},
             "last_name": {"required": True},
-            "profile_image": {"required": True}
+            "profile_image": {"read_only": True},
         }
 
     def create(self, validated_data):
@@ -101,4 +100,4 @@ class EmailAvailabilitySerializer(Serializer):
 class ProfileImageUpdateSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = ('profile_image',)
+        fields = ("profile_image",)
