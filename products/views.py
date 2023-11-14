@@ -36,7 +36,6 @@ class ProductDetailView(RetrieveDestroyAPIView):
         if self.request.method == "DELETE":
             return [IsAuthenticated(), IsProductCreator()]
         return super().get_permissions()
-    
 
 
 class ProductListView(ListCreateAPIView):

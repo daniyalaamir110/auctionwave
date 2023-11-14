@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "products",
     "bids",
     "authentication",
+    "dashboard",
 ]
 
 REST_FRAMEWORK = {
@@ -129,7 +130,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = 'user.User'
+AUTH_USER_MODEL = "user.User"
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
