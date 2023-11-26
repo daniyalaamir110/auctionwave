@@ -2,7 +2,7 @@ from rest_framework import serializers, fields
 from .models import Bid
 from products.models import Product
 from products.serializers import ProductReadSerializer
-from user.serializers import UserReadSerializer
+from user.serializers import UserSerializer
 from datetime import datetime, timezone
 
 
@@ -12,7 +12,8 @@ class BidReadSerializer(serializers.ModelSerializer):
     """
 
     product = ProductReadSerializer(read_only=True)
-    bidder = UserReadSerializer(read_only=True)
+    bidder = UserSerializer(read_only=True)
+    rank = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Bid
@@ -25,13 +26,28 @@ class UserBidReadSerializer(serializers.ModelSerializer):
     """
 
     product = ProductReadSerializer(read_only=True)
+    rank = serializers.IntegerField(read_only=True)
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Bid
         exclude = ["bidder"]
 
+    def get_status(self, obj):
+        if obj.product.status == "ongoing":
+            return "pending"
 
-class UserBidUpdateDeleteSerializer(serializers.ModelSerializer):
+        highest_bidder = obj.product.highest_bid.bidder
+
+        current_user = self.context["request"].user
+
+        if highest_bidder == current_user:
+            return "won"
+
+        return "lost"
+
+
+class UserBidUpdateSerializer(serializers.ModelSerializer):
     """
     Serializer with bid info of a product, along with bidder.
     """

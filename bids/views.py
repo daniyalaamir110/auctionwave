@@ -1,71 +1,94 @@
-from rest_framework import permissions, generics
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from .models import Bid
 from .serializers import (
     UserBidReadSerializer,
-    UserBidUpdateDeleteSerializer,
+    UserBidUpdateSerializer,
     BidWriteSerializer,
 )
 from common.paginations import StandardResultsSetPagination
 from common.permissions import IsBidder, IsBidProductValid
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 
 
-class UserBidsListView(generics.ListAPIView):
-    """
-    This resource returns a list of bids the currently
-    logged in user has made. User must be logged in to
-    access this resource.
-    """
-
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = UserBidReadSerializer
+class UserBidsListView(ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
 
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return UserBidReadSerializer
+        elif self.request.method == "POST":
+            return BidWriteSerializer
+        return super().get_serializer_class()
+
+    def get_status(self, obj):
+        if obj.product.status == "ongoing":
+            return "pending"
+
+        highest_bidder = obj.product.highest_bid.bidder
+
+        current_user = self.request.user
+
+        if highest_bidder == current_user:
+            return "won"
+
+        return "lost"
+
     def get_queryset(self):
-        queryset = Bid.objects.filter(bidder=self.request.user).order_by("-created_at")
+        if self.request.method == "GET":
+            status = self.request.query_params.get("status", None)
 
-        return queryset
+            queryset = (
+                Bid.objects.filter(bidder=self.request.user)
+                .order_by("-created_at")
+                .select_related("product")
+            )
 
+            if status:
+                queryset = [o for o in queryset.all() if self.get_status(o) == status]
 
-class UserBidsRetrieveView(generics.RetrieveAPIView):
-    """
-    This resource returns the bids done by the current user
-    on others' products.
-    """
+            return queryset
 
-    queryset = Bid.objects.all().order_by("-created_at")
-    permission_classes = [permissions.IsAuthenticated, IsBidder]
-    serializer_class = UserBidReadSerializer
+        return Bid.objects.filter(bidder=self.request.user).order_by("-created_at")
 
-
-class UserBidsUpdateView(generics.UpdateAPIView):
-    """
-    This resource lets update the bid amount of an existing bid
-    if the product is valid.
-    """
-
-    queryset = Bid.objects.all().order_by("-created_at")
-    permission_classes = [permissions.IsAuthenticated, IsBidder, IsBidProductValid]
-    serializer_class = UserBidUpdateDeleteSerializer
-
-
-class UserBidsDeleteView(generics.DestroyAPIView):
-    """
-    This resource lets cancel an existing bid done by the user,
-    if the product is available.
-    """
-
-    queryset = Bid.objects.all().order_by("-created_at")
-    permission_classes = [permissions.IsAuthenticated, IsBidder, IsBidProductValid]
-
-
-class BidCreateView(generics.CreateAPIView):
-    """
-    This resource lets a user create a bid on a product, created by other
-    users that is available.
-    """
-
-    serializer_class = BidWriteSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                "status",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                enum=["pending", "won", "lost"],
+            ),
+        ],
+        responses={200: UserBidReadSerializer(many=True)},
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         serializer.save(bidder=self.request.user)
+
+
+class UserBidsDetailView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated, IsBidder]
+
+    def get_queryset(self):
+        if self.request.method == "GET":
+            return Bid.objects.all().order_by("-created_at").select_related("product")
+        else:
+            return Bid.objects.all().order_by("-created_at")
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return UserBidReadSerializer
+        elif self.request.method in ("POST", "PUT", "PATCH"):
+            return UserBidUpdateSerializer
+        return super().get_serializer_class()
+
+    def get_permissions(self):
+        self.permission_classes = [IsAuthenticated, IsBidder]
+        if self.request.method not in SAFE_METHODS:
+            self.permission_classes.append(IsBidProductValid)
+        return super().get_permissions()

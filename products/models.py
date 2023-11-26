@@ -2,13 +2,20 @@ from django.db import models
 from common.models import TimestampedModel
 from datetime import datetime, timedelta, timezone
 from django.core.exceptions import ValidationError
-from django.contrib import admin
+from config.settings import AUTH_USER_MODEL
+import uuid
 
 
 def no_past(value):
     now = datetime.now(tz=timezone.utc)
     if value < now:
         raise ValidationError("valid_till cannot be in the past.")
+
+
+def upload_to(instance, filename):
+    ext = filename.split(sep=".")[-1]
+    filename = uuid.uuid1()
+    return "images/products/{filename}.{ext}".format(filename=filename, ext=ext)
 
 
 class Product(TimestampedModel):
@@ -22,6 +29,8 @@ class Product(TimestampedModel):
     description = models.CharField(max_length=500, verbose_name="Product Description")
     base_price = models.PositiveIntegerField(verbose_name="Base Price")
     valid_till = models.DateTimeField(validators=[no_past], verbose_name="Valid Till")
+    is_sold = models.BooleanField(default=False)
+    image = models.ImageField(upload_to=upload_to)
 
     # Foreign keys
     category = models.ForeignKey(
@@ -31,7 +40,7 @@ class Product(TimestampedModel):
         verbose_name="Category",
     )
     creator = models.ForeignKey(
-        "auth.User",
+        AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="products",
         verbose_name="Creator",
@@ -50,7 +59,7 @@ class Product(TimestampedModel):
         if self.is_available:
             time_left = self.valid_till - datetime.now(tz=timezone.utc)
 
-        return str(time_left)
+        return time_left
 
     @property
     def highest_bid(self):
@@ -63,10 +72,19 @@ class Product(TimestampedModel):
     def bid_count(self):
         return self.bids.count()
 
-    def clean(self):
-        now = datetime.now(tz=timezone.utc)
-        if self.valid_till < now:
-            raise ValidationError("valid_till cannot be in the past.")
+    @property
+    def status(self):
+        if self.is_sold:
+            return "sold"
+        elif self.valid_till > datetime.now(tz=timezone.utc):
+            return "ongoing"
+        else:
+            return "finished"
+
+    # def clean(self):
+    #     now = datetime.now(tz=timezone.utc)
+    #     if self.valid_till < now:
+    #         raise ValidationError("valid_till cannot be in the past.")
 
     def save(self, *args, **kwargs):
         self.clean()

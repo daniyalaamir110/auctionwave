@@ -5,19 +5,18 @@ import products.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('products', '0002_product_valid_till_not_less_than_current_datetime'),
+        ("products", "0002_product_valid_till_not_less_than_current_datetime"),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name='product',
-            name='valid_till_not_less_than_current_datetime',
+            model_name="product",
+            name="valid_till_not_less_than_current_datetime",
         ),
         migrations.AlterField(
-            model_name='product',
-            name='valid_till',
+            model_name="product",
+            name="valid_till",
             field=models.DateTimeField(validators=[products.models.no_past]),
         ),
     ]
