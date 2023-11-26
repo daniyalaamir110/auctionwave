@@ -21,7 +21,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticate
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from django.db.models.query import Q
 
 
@@ -241,10 +241,9 @@ class ProductSellView(UpdateAPIView):
         IsProductAuctionEnded,
         IsProductNotSold,
     ]
-    lookup_field = "id"
 
-    def update(self):
+    def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        instance.sold = True
+        instance.is_sold = True
         instance.save()
         return Response({"detail": "Product marked as sold"}, status=HTTP_200_OK)

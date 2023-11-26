@@ -29,7 +29,7 @@ class UserBidsListView(ListCreateAPIView):
 
         highest_bidder = obj.product.highest_bid.bidder
 
-        current_user = self.context["request"].user
+        current_user = self.request.user
 
         if highest_bidder == current_user:
             return "won"

@@ -71,7 +71,7 @@ class Product(TimestampedModel):
     @property
     def bid_count(self):
         return self.bids.count()
-    
+
     @property
     def status(self):
         if self.is_sold:
@@ -81,10 +81,10 @@ class Product(TimestampedModel):
         else:
             return "finished"
 
-    def clean(self):
-        now = datetime.now(tz=timezone.utc)
-        if self.valid_till < now:
-            raise ValidationError("valid_till cannot be in the past.")
+    # def clean(self):
+    #     now = datetime.now(tz=timezone.utc)
+    #     if self.valid_till < now:
+    #         raise ValidationError("valid_till cannot be in the past.")
 
     def save(self, *args, **kwargs):
         self.clean()
